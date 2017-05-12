@@ -42,8 +42,6 @@ def make_fasta(input_file):
 			ref.write(line[2]+"\n")
 
 
-
-
 if __name__ == "__main__":
 	# seq_file = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/02_data/all_sequence.txt"
 	# process_seq_file(seq_file)

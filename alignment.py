@@ -1,6 +1,7 @@
 import os
 import sys
 import logging.config
+import shutil
 
 class Alignment(object):
 
@@ -15,12 +16,19 @@ class Alignment(object):
 		pass
 
 	def _align(self, fastq):
+
 		basename = os.path.basename(fastq).split(".")[0]
+		# create a dir for each alignment
+		if os.path.exists("./"+basename):
+			shutil.rmtree("./"+basename)
+		os.makedirs("./"+basename)
+		os.chdir("./"+basename)
+
 		if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
-			command = "bowtie2 -a " + " -x " + self._reference +" -U " + fastq  + " -S " + basename + ".sam " + " > bowtie_DEFAULT_" + basename + ".log"
+			command = "bowtie2 -a " + " -x " + self._reference +" -U " + fastq  + " -S " + basename + ".sam " + "2> bowtie_DEFAULT_" + basename + ".log"
 			os.system(command)
 		elif self._setting == "SENSITIVE": # strict bowtie2 settings for alignment, more info in README
-			command = "bowtie2 -a -p 20 -x ORF_with_pDONR --local --very-sensitive-local -U "+fastq+ "-S "+self._reference + " > bowtie_SENSITIVE_" + basename + ".log"
+			command = "bowtie2 -a -p 20 -x " + self._reference +" --local --very-sensitive-local -U " + fastq + "-S " + basename + ".sam " + "2> bowtie_SENSITIVE_" + basename + ".log"
 			os.system(command)
 		else:
 			command = "ERROR: please provide correct setting (DEFAULT/SENSITIVE)"
@@ -53,7 +61,7 @@ class Alignment(object):
 
 if __name__ == "__main__":
 	# get all the names of fastq file
-	fastq_path = "../03_PPS_DK/"
+	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
 	alignment_obj = Alignment(reference, fastq_path)
 	alignment_obj._main()
