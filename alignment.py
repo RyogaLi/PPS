@@ -27,7 +27,7 @@ class Alignment(object):
 			command = "bowtie2 -a " + " -x " + self._reference +" -U " + fastq  + " -S " + basename + ".sam " + "2> bowtie_DEFAULT_" + basename + ".log"
 			os.system(command)
 		elif self._setting == "SENSITIVE": # strict bowtie2 settings for alignment, more info in README
-			command = "bowtie2 -a -p 20 -x " + self._reference +" --local --very-sensitive-local -U " + fastq + "-S " + basename + ".sam " + "2> bowtie_SENSITIVE_" + basename + ".log"
+			command = "bowtie2 -a -p 20 -x " + self._reference +" --local --very-sensitive-local -U " + fastq + " -S " + basename + ".sam " + "2> bowtie_SENSITIVE_" + basename + ".log"
 			os.system(command)
 		else:
 			command = "ERROR: please provide correct setting (DEFAULT/SENSITIVE)"
@@ -74,6 +74,6 @@ if __name__ == "__main__":
 	# get all the names of fastq file
 	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
-	alignment_obj = Alignment(reference, fastq_path)
+	alignment_obj = Alignment(reference, fastq_path, setting="SENSITIVE")
 	alignment_obj._main()
 
