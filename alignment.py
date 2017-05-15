@@ -1,3 +1,4 @@
+from conf import *
 import os
 import sys
 import logging.config
@@ -16,14 +17,12 @@ class Alignment(object):
 		pass
 
 	def _align(self, fastq):
-
 		basename = os.path.basename(fastq).split(".")[0]
 		# create a dir for each alignment
-		if os.path.exists("./"+basename):
-			shutil.rmtree("./"+basename)
-		os.makedirs("./"+basename)
-		os.chdir("./"+basename)
-
+		if os.path.exists(output+basename):
+			shutil.rmtree(output+basename)
+		os.makedirs(output+basename)
+		os.chdir(output+basename)
 		if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
 			command = "bowtie2 -a " + " -x " + self._reference +" -U " + fastq  + " -S " + basename + ".sam " + "2> bowtie_DEFAULT_" + basename + ".log"
 			os.system(command)
@@ -33,12 +32,25 @@ class Alignment(object):
 		else:
 			command = "ERROR: please provide correct setting (DEFAULT/SENSITIVE)"
 			sys.exit(command)
+
+		# convert sam file to a sorted bam file out put from samtools are save in corresponding log files
+		os.system("samtools view -bS "+ basename + ".sam > " + basename + ".bam 2> sam_to_bam.log")
+		os.system("samtools sort " + basename + ".bam -o " + basename + "_sorted.bam 2> sort_bam.log")
+		# creating a bam index file
+		os.system("samtools index " + basename + "_sorted.bam " + basename + "_sorted.bai 2> generate_index.log")
+
 		return command
 
 	def _main(self):
+		# create a dir for each alignment
+		if os.path.exists("./log"):
+			shutil.rmtree("./log")
+		os.makedirs("./log")
 		# init logging
 		logging.config.fileConfig("./logging.conf")
 		logger = logging.getLogger("alignment")
+		# create log directory
+
 
 		# fastq files list
 		fastq_files = []
@@ -55,8 +67,7 @@ class Alignment(object):
 			command = self._align(fastq)
 			logger.info(command)
 			logger.info("alignment finished for "+os.path.basename(fastq))
-			break
-
+			break # test
 
 
 if __name__ == "__main__":
