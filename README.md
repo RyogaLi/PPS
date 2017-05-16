@@ -5,7 +5,7 @@
 * `variant_call.py`
 
 
-#### BOWTIE2 alignment settings
+#### BOWTIE2 alignment settings ####
 * **DEFAULT**
     * **command**: `bowtie2 -a -x reference -U fastq -S sam_file`
         * end to end alignment
@@ -21,3 +21,13 @@
         * `-i S,1,0.50`:  `f(read_length) = 1 + 0.5 * sqrt(read_length)` 
         * `-N 0`: zero mismaches
         * `-L 20`: Sets the length of the seed substrings to align during multiseed alignment. Smaller values make alignment slower but more sensitive. Default: the --sensitive preset is used by default, which sets -L to 20 both in --end-to-end mode and in --local mode.
+        
+ #### vcf files ####
+ * **INFO**
+     * `DP`: raw read depth
+     * `I16`: Auxiliary tag
+     * `QS`: Auxiliary tag
+     * `MQSB`: Mann-Whitney U test of mapping quality vs strand bias
+     * `MQ0F`: fractrion of MQ0 reads
+     
+     
