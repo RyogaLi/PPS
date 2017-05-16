@@ -74,6 +74,6 @@ if __name__ == "__main__":
 	# get all the names of fastq file
 	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
-	alignment_obj = Alignment(reference, fastq_path, setting="SENSITIVE")
+	alignment_obj = Alignment(reference, fastq_path)
 	alignment_obj._main()
 
