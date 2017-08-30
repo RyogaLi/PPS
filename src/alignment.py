@@ -11,35 +11,52 @@ class Alignment(object):
 		self._fastq_path = fastq_path
 		self._setting = setting
 
-	def error_check(self):
-		# check if fasta file exits
-		# check if fastq file exits
-		pass
-
 	def _align(self, fastq):
-		basename = os.path.basename(fastq).split(".")[0]
+		self._basename = os.path.basename(fastq).split(".")[0]
 		# create a dir for each alignment
-		if os.path.exists(output+basename):
-			shutil.rmtree(output+basename)
-		os.makedirs(output+basename)
-		os.chdir(output+basename)
+		if os.path.exists(output+self._basename):
+			shutil.rmtree(output+self._basename)
+		os.makedirs(output+self._basename)
+		os.chdir(output+self._basename)
 		if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
-			command = "bowtie2 -a " + " -x " + self._reference +" -U " + fastq  + " -S " + basename + ".sam " + "2> bowtie_DEFAULT_" + basename + ".log"
+			command = "bowtie2 -a " + " -x " + self._reference +" -U " + fastq  + " -S " + self._basename + ".sam " + "2> bowtie_DEFAULT_" + self._basename + ".log"
 			os.system(command)
 		elif self._setting == "SENSITIVE": # strict bowtie2 settings for alignment, more info in README
-			command = "bowtie2 -a -p 20 -x " + self._reference +" --local --very-sensitive-local -U " + fastq + " -S " + basename + ".sam " + "2> bowtie_SENSITIVE_" + basename + ".log"
+			command = "bowtie2 -a -p 20 -x " + self._reference +" --local --very-sensitive-local -U " + fastq + " -S " + self._basename + ".sam " + "2> bowtie_SENSITIVE_" + self._basename + ".log"
 			os.system(command)
 		else:
 			command = "ERROR: please provide correct setting (DEFAULT/SENSITIVE)"
 			sys.exit(command)
 
-		# convert sam file to a sorted bam file out put from samtools are save in corresponding log files
-		os.system("samtools view -bS "+ basename + ".sam > " + basename + ".bam 2> sam_to_bam.log")
-		os.system("samtools sort " + basename + ".bam -o " + basename + "_sorted.bam 2> sort_bam.log")
+		# convert sam file to a sorted bam file out put from samtools are save in corresponding log files, sterr
+		os.system("samtools view -bS "+ self._basename + ".sam > " + self._basename + ".bam 2> sam_to_bam.log")
+		os.system("samtools sort " + self._basename + ".bam -o " + self._basename + "_sorted.bam 2> sort_bam.log")
 		# creating a bam index file
-		os.system("samtools index " + basename + "_sorted.bam " + basename + "_sorted.bai 2> generate_index.log")
+		os.system("samtools index " + self._basename + "_sorted.bam " + self._basename + "_sorted.bai 2> generate_index.log")
 
 		return command
+
+	def _gene_count(self):
+		gene_count = {}
+		with open(self._basename+".sam", "r") as sam_file:
+			for line in sam_file:
+				if "@" in line: continue
+				line = line.split("\t")
+				if line[2] in gene_count.keys():
+					gene_count[line[2]] += 1
+				else:
+					gene_count[line[2]] = 1
+		with open("gene_count.txt", "w") as output:
+			output.write("gene_name\tgene_count\n")
+			for key in gene_count.keys():
+				output.write(key+"\t"+str(gene_count[key])+"\n")
+
+	def _remove_errlog(self):
+		"""
+		remove error log file if it's empty
+		:return: 
+		"""
+		pass
 
 	def _main(self):
 		# create a dir for each alignment
@@ -67,7 +84,8 @@ class Alignment(object):
 			command = self._align(fastq)
 			logger.info(command)
 			logger.info("alignment finished for "+os.path.basename(fastq))
-			break # test
+			self._gene_count()
+
 
 
 if __name__ == "__main__":
@@ -76,4 +94,5 @@ if __name__ == "__main__":
 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
 	alignment_obj = Alignment(reference, fastq_path)
 	alignment_obj._main()
+	# alignment_obj._gene_count()
 

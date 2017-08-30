@@ -44,7 +44,9 @@ seq1 279 C 23  A..T,,.,.,...,,,.,..... ;75&<<<<<<<<<=<<<9<<:<<
 * Similarly, a pattern `-[0-9]+[ACGTNacgtn]+` represents a deletion from the reference. Here is an exmaple of a 4bp deletions from the reference, supported by two reads:
 
     `seq3 200 A 20 ,,,,,..,.-4CACC.-4CACC....,.,,.^~. ==<<<<<<<<<<<::<;2<<`
-* Also at the read base column, a symbol `^' marks the start of a read segment which is a contiguous subsequence on the read separated by `N/S/H' CIGAR operations. The ASCII of the character following `^' minus 33 gives the mapping quality. A symbol `$' marks the end of a read segment. Start and end markers of a read are largely inspired by Phil Green's CALF format. These markers make it possible to reconstruct the read sequences from pileup.
+* Also at the read base column, a symbol `^` marks the start of a read segment which is a contiguous subsequence on the read separated by `N/S/H` CIGAR operations. 
+* The ASCII of the character following `^` minus 33 gives the mapping quality. 
+* A symbol `$` marks the end of a read segment. Start and end markers of a read are largely inspired by Phil Green's CALF format. These markers make it possible to reconstruct the read sequences from pileup.
 
 #### VCF files ####
  * **INFO**
