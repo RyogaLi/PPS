@@ -77,7 +77,7 @@ class Alignment(object):
 
 		# for each fastq file in the list
 		# align to ref
-		# put bowtie debug into separate file
+		# put bowtie debug into separate directory
 		# alignment.log: if the alignment complete successfully
 		for fastq in fastq_files:
 			logger.info("started aligning "+os.path.basename(fastq))

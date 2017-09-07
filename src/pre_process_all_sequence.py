@@ -34,6 +34,11 @@ def read_file_to_matrix(filename):
 	return np.asmatrix(output)
 
 def make_fasta(input_file):
+	"""
+	make a reference (fasta file)
+	:param input_file: 
+	:return: 
+	"""
 	with open(input_file, "r") as fp, open("ORF_reference.fasta", "w") as ref:
 		for line in fp:
 			if "source" in line: continue
