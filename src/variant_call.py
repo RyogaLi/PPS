@@ -1,8 +1,6 @@
 from conf import *
 
 class VariantCall(object):
-
-
 	def __init__(self, reference, setting="DEFAULT"):
 		self._reference = reference
 		self._setting = setting
