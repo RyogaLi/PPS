@@ -89,20 +89,37 @@ class VariantCall(object):
 		:param gene_names: 
 		:return: 
 		"""
-		output = self._basename+"_filtered.vcf"
-		with open(self._raw_vcf, "r") as raw:
-			with open(output, "w") as output_vcf:
-				for line in raw:
-					# reove head lines and unwanted genes
+		snp_count = {}
+		indel_count = {}
+		# create reader and writer
+		with open(self._raw_vcf, "r") as raw_vcf:
+			with open(self._basename+"_filtered.vcf", "w") as filtered:
+				for line in raw_vcf:
+					# eliminate header
 					if line.startswith("##"):
 						continue
+					# remove unwanted genes
 					line = line.split()
 					if line[0] not in gene_names.keys():
 						continue
-					print line
-					break
+					# count SNP and INDEL for each gene
 
-		return None
+					if "INDEL" in line[-3]:
+						if line[0] in indel_count.keys():
+							indel_count[line[0]] += 1
+						else:
+							indel_count[line[0]] = 1
+					elif line[4] != "<*>":
+						if line[0] in snp_count.keys():
+							snp_count[line[0]] += 1
+						else:
+							snp_count[line[0]] = 1
+
+					# write record to file
+					filtered.write("\t".join(line)+"\n")
+		return snp_count, indel_count
+
+
 
 	def _main(self):
 		# goto each folder in output dir
@@ -118,7 +135,10 @@ class VariantCall(object):
 					self._call_variants(file)
 					# get genes that are fully covered by alignment
 					full_cover = self._get_full_cover()
-					self._filter_vcf(full_cover)
+					snp, indel = self._filter_vcf(full_cover)
+					print full_cover
+					print snp
+					print indel
 					break
 
 
