@@ -1,7 +1,9 @@
 ## Dependencies
-* `python version 2.7.10`
-* `Bowtie2 version 2.3.2`
-* `samtools version 1.4`
+* [python version 2.7.10]<https://www.python.org/downloads/>
+
+* [Bowtie2 version 2.3.2]<https://sourceforge.net/projects/bowtie-bio/files/bowtie2/>
+
+* [samtools version 1.4]<https://sourceforge.net/projects/samtools/files/>
 
 ## Input
 * Reference file: `reference.fasta`
