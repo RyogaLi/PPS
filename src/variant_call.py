@@ -91,6 +91,7 @@ class VariantCall(object):
 		"""
 		snp_count = {}
 		indel_count = {}
+		avg_rd = {}
 		# create reader and writer
 		with open(self._raw_vcf, "r") as raw_vcf:
 			with open(self._basename+"_filtered.vcf", "w") as filtered:
@@ -115,9 +116,11 @@ class VariantCall(object):
 						else:
 							snp_count[line[0]] = 1
 
+
+
 					# write record to file
 					filtered.write("\t".join(line)+"\n")
-		return snp_count, indel_count
+		return snp_count, indel_count, avg_rd
 
 
 
