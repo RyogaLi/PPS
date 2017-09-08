@@ -116,11 +116,9 @@ class VariantCall(object):
 						else:
 							snp_count[line[0]] = 1
 
-
-
 					# write record to file
 					filtered.write("\t".join(line)+"\n")
-		return snp_count, indel_count, avg_rd
+		return snp_count, indel_count
 
 
 

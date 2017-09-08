@@ -11,9 +11,11 @@
 
 ## Run
 0. If you haven't build index for the fasta file, please run the following command to build index files
+    
     ```
-    bowtie2-build
+    bowtie2-build [options]* path_to_your_ref.fasta reference_name
     ```
+    
 1. Please goto `./src/conf.py` to change all the required input parameters
 2. 
 
@@ -24,4 +26,4 @@
 
 
 ## Notes
-* Please goto `wiki` page for more information: [Wiki page](https://github.com/RyogaLi/PPS/wiki)
+* Please goto [wiki page](https://github.com/RyogaLi/PPS/wiki) for more information
