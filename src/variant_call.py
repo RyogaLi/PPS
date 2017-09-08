@@ -5,11 +5,12 @@ class VariantCall(object):
 		self._reference = reference
 		self._setting = setting
 
+
 	def _call_variants(self, bam):
-		basename =  os.path.basename(bam).split(".")[0]
+		self._basename = os.path.basename(bam).split(".")[0]
 		if self._setting == "DEFAULT":
-			command = "samtools mpileup -uf " + self._reference + " " + bam + " | bcftools view - > " + basename + ".raw.vcf"
-			self._raw_vcf = basename + ".raw.vcf"
+			command = "samtools mpileup -uf " + self._reference + " " + bam + " | bcftools view - > " + self._basename + ".raw.vcf"
+			self._raw_vcf = self._basename + ".raw.vcf"
 			# command = "samtools mpileup --ff=1024 -A -Vf " + self._reference + " " + bam + " > " + basename + ".txt"
 		else:
 			command = "ERROR: please provide correct setting"
@@ -56,11 +57,11 @@ class VariantCall(object):
 
 		return gene_list
 
-	def _filter_vcf(self):
-		# todo filter all the reads with 1 rd
-		# todo filter all the genes that are not fully covered
-		# todo separate into snp and indel
-
+	def _get_full_cover(self):
+		"""
+		Get a dictionary of gene names which are fully covered(aligned) in vcf file
+		:return: dictionary with keys = gene names value = gene length
+		"""
 		with open(self._raw_vcf, "r") as raw:
 			gene_dict = {}
 			ref_dict = {}
@@ -69,27 +70,39 @@ class VariantCall(object):
 				if id_line:
 					ref_dict[id_line.group(1)] = int(id_line.group(2))
 				if "#" not in line:
-					if "INDEL" in line: continue
-					line = line.strip().split("\t")
-					# INFO = line[7].split(";")
-					# print INFO
-					# dp = int(INFO[0].split("=")[1])
+					# if "INDEL" in line: continue
+					line = line.split()
 					if line[0] not in gene_dict.keys():
-						# if dp == 0: continue
 						gene_dict[line[0]] = 1
 					else:
 						gene_dict[line[0]] +=1
 
 			for key in gene_dict.keys():
-
-				if gene_dict[key] != int(ref_dict[key]):
-					print key
-					print gene_dict[key]
-					print ref_dict[key]
+				if gene_dict[key] < int(ref_dict[key]):
 					del gene_dict[key]
 
 		return gene_dict
 
+	def _filter_vcf(self, gene_names):
+		"""
+		Filter vcf file with only genes in the gene_dictionary 
+		:param gene_names: 
+		:return: 
+		"""
+		output = self._basename+"_filtered.vcf"
+		with open(self._raw_vcf, "r") as raw:
+			with open(output, "w") as output_vcf:
+				for line in raw:
+					# reove head lines and unwanted genes
+					if line.startswith("##"):
+						continue
+					line = line.split()
+					if line[0] not in gene_names.keys():
+						continue
+					print line
+					break
+
+		return None
 
 	def _main(self):
 		# goto each folder in output dir
@@ -99,15 +112,13 @@ class VariantCall(object):
 		for dir in dir_list:
 			if not os.path.isdir(output+"/"+dir): continue
 			os.chdir(output+dir)
-
 			for file in os.listdir("."):
 				if "_sorted.bam" in file:
 					# call variant
 					self._call_variants(file)
-
-					# summarize read depth for all genes
-					#read_depth = self._analyze_rd()
-					print self._filter_vcf()
+					# get genes that are fully covered by alignment
+					full_cover = self._get_full_cover()
+					self._filter_vcf(full_cover)
 					break
 
 

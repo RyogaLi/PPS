@@ -12,7 +12,7 @@ class Alignment(object):
 		self._setting = setting
 
 	def _align(self, r1, r2):
-		self._basename = os.path.basename(r1).split("R1")[0]
+		self._basename = os.path.basename(r1).split("_R1")[0]
 		# create a dir for each alignment
 		if os.path.exists(output+self._basename):
 			shutil.rmtree(output+self._basename)
