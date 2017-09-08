@@ -1,9 +1,9 @@
 ## Dependencies
-* [python version 2.7.10]<https://www.python.org/downloads/>
+* [python version 2.7.10](https://www.python.org/downloads/)
 
-* [Bowtie2 version 2.3.2]<https://sourceforge.net/projects/bowtie-bio/files/bowtie2/>
+* [Bowtie2 version 2.3.2](https://sourceforge.net/projects/bowtie-bio/files/bowtie2/)
 
-* [samtools version 1.4]<https://sourceforge.net/projects/samtools/files/>
+* [samtools version 1.4](https://sourceforge.net/projects/samtools/files/)
 
 ## Input
 * Reference file: `reference.fasta`
@@ -24,4 +24,4 @@
 
 
 ## Notes
-* Please goto `wiki` page for more information: [Wiki page]<https://github.com/RyogaLi/PPS/wiki>
+* Please goto `wiki` page for more information: [Wiki page](https://github.com/RyogaLi/PPS/wiki)
