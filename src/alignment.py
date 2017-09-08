@@ -11,18 +11,19 @@ class Alignment(object):
 		self._fastq_path = fastq_path
 		self._setting = setting
 
-	def _align(self, fastq):
-		self._basename = os.path.basename(fastq).split(".")[0]
+	def _align(self, r1, r2):
+		self._basename = os.path.basename(r1).split("R1")[0]
 		# create a dir for each alignment
 		if os.path.exists(output+self._basename):
 			shutil.rmtree(output+self._basename)
 		os.makedirs(output+self._basename)
 		os.chdir(output+self._basename)
+
 		if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
-			command = "bowtie2 -a " + " -x " + self._reference +" -U " + fastq  + " -S " + self._basename + ".sam " + "2> bowtie_DEFAULT_" + self._basename + ".log"
+			command = "bowtie2 -a " + " -x " + self._reference +" -1 " + r1 + " -2 " + r2 + " -S " + self._basename + ".sam " + "2> bowtie_DEFAULT_" + self._basename + ".log"
 			os.system(command)
 		elif self._setting == "SENSITIVE": # strict bowtie2 settings for alignment, more info in README
-			command = "bowtie2 -a -p 20 -x " + self._reference +" --local --very-sensitive-local -U " + fastq + " -S " + self._basename + ".sam " + "2> bowtie_SENSITIVE_" + self._basename + ".log"
+			command = "bowtie2 -a -p 20 -x " + self._reference +" --local --very-sensitive-local -1 " + r1 + " -2 " + r2 + " -S " + self._basename + ".sam " + "2> bowtie_SENSITIVE_" + self._basename + ".log"
 			os.system(command)
 		else:
 			command = "ERROR: please provide correct setting (DEFAULT/SENSITIVE)"
@@ -64,34 +65,38 @@ class Alignment(object):
 			shutil.rmtree("./log")
 		os.makedirs("./log")
 		# init logging
-		logging.config.fileConfig("./logging.conf")
+		logging.config.fileConfig("./src/logging.conf")
 		logger = logging.getLogger("alignment")
 		# create log directory
 
 
 		# fastq files list
-		fastq_files = []
+		r1_files = []
+		r2_files = []
 		for file in os.listdir(fastq_path):
 			if file.endswith(".fastq"):
-				fastq_files.append(os.path.join(fastq_path, file))
+				# fetch R1 in file name and add to r1
+				if "R1" in file:
+					r1_files.append(file)
+				elif "R2" in file:
+					r2_files.append(file)
 
-		# for each fastq file in the list
-		# align to ref
-		# put bowtie debug into separate directory
-		# alignment.log: if the alignment complete successfully
-		for fastq in fastq_files:
-			logger.info("started aligning "+os.path.basename(fastq))
-			command = self._align(fastq)
+		for r1 in r1_files:
+			# find corresponding r2
+			identifier = os.path.basename(r1).split("R1")[0]
+			r2 = [i for i in r2_files if identifier in i][0]
+			logger.info("started aligning %s and %s", os.path.basename(r1), os.path.basename(r2))
+			command = self._align(fastq_path+r1, fastq_path+r2)
 			logger.info(command)
-			logger.info("alignment finished for "+os.path.basename(fastq))
-			self._gene_count()
-
+			logger.info("alignment finished for %s and %s", os.path.basename(r1), os.path.basename(r2))
+			# self._gene_count()
+			break
 
 
 if __name__ == "__main__":
 	# get all the names of fastq file
-	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
-	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
+# 	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
+# 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
 	alignment_obj = Alignment(reference, fastq_path)
 	alignment_obj._main()
 	# alignment_obj._gene_count()
