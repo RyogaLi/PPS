@@ -16,14 +16,10 @@ def main():
 	alignment_obj._main()
 
 	# step 3
-	# gene count
+	# variant call
+	variant_caller = VariantCall(reference + ".fasta")
+	variant_caller._main()
 
-
-	# step 4
-	# convert all .sam to bam and create index
-
-
-	pass
 
 if __name__ == "__main__":
 	main()
