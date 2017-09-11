@@ -1,8 +1,6 @@
 from conf import *
 from alignment import *
 from variant_call import *
-import os
-import sys
 
 def main():
 	# step 1
@@ -12,11 +10,14 @@ def main():
 
 	# step 2
 	# alignment
-	alignment_obj = Alignment(reference, fastq_path)
-	alignment_obj._main()
+	# if user want the sequnece file to be aligned first
+	# if only want to find variants, please set the variable to False in conf.py
+	if ALIGN == True:
+		alignment_obj = Alignment(reference, fastq_path, ALIGNMENT_SETTING)
+		alignment_obj._main()
 
 	# step 3
-	# variant call
+	# variant call and analysis
 	variant_caller = VariantCall(reference + ".fasta")
 	variant_caller._main()
 

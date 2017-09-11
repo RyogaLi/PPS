@@ -65,6 +65,7 @@ class VariantCall(object):
 		with open(self._raw_vcf, "r") as raw:
 			gene_dict = {}
 			ref_dict = {}
+			total_gene_count= []
 			for line in raw:
 				id_line = re.search("<ID=(.+?),length=(.+?)>", line)
 				if id_line:
@@ -77,11 +78,14 @@ class VariantCall(object):
 					else:
 						gene_dict[line[0]] +=1
 
+					if line[0] not in total_gene_count:
+						total_gene_count.append(line[0])
+
 			for key in gene_dict.keys():
 				if gene_dict[key] < int(ref_dict[key]):
 					del gene_dict[key]
 
-		return gene_dict
+		return gene_dict, len(total_gene_count)
 
 	def _filter_vcf(self, gene_names):
 		"""
@@ -91,7 +95,6 @@ class VariantCall(object):
 		"""
 		snp_count = {}
 		indel_count = {}
-		avg_rd = {}
 		# create reader and writer
 		with open(self._raw_vcf, "r") as raw_vcf:
 			with open(self._basename+"_filtered.vcf", "w") as filtered:
@@ -120,33 +123,63 @@ class VariantCall(object):
 					filtered.write("\t".join(line)+"\n")
 		return snp_count, indel_count
 
+	def _gene_count_plot(self, n, gc, fc):
+		"""
+		make a bar chart
+		:param n: number of classes 
+		:param y: value
+		:return: 
+		"""
+		fig, ax = plt.subplots()
+		index = np.arange(n)
+		bar_width = 0.2
 
+		opacity = 0.4
+		rects1 = plt.bar(index, gc, bar_width, alpha=opacity, color='b',label='Gene count')
+
+		rects2 = plt.bar(index + bar_width, fc, bar_width,alpha=opacity,color='r',label='Full covered gene count')
+		plt.xlabel('Well')
+		plt.ylabel('Count')
+		plt.title('Number of genes in each well')
+		plt.xticks(index + bar_width / 2)
+		plt.legend()
+
+		plt.tight_layout()
+		plt.show()
 
 	def _main(self):
 		# goto each folder in output dir
 		# run this inside the dir
 		read_depth = {}
+		gc = []
+		fc = []
+		total_files = 0
 		dir_list = os.listdir(output)
 		for dir in dir_list:
 			if not os.path.isdir(output+"/"+dir): continue
 			os.chdir(output+dir)
 			for file in os.listdir("."):
 				if "_sorted.bam" in file:
+					total_files += 1
 					# call variant
 					self._call_variants(file)
 					# get genes that are fully covered by alignment
-					full_cover = self._get_full_cover()
+					full_cover, total = self._get_full_cover()
 					snp, indel = self._filter_vcf(full_cover)
-					print full_cover
-					print snp
-					print indel
-					break
+					gc.append(total)
+					fc.append(len(full_cover.keys()))
+					if total_files >= 3: break
+		self._gene_count_plot(total_files, gc, fc)
 
-
+#
 if __name__ == "__main__":
 	variant_caller = VariantCall(reference+".fasta")
 	variant_caller._main()
-	# test parse
+	# test plot
+	# a = [2,3,4]
+	# b = [3,4,5]
+	# n = 3
+	# variant_caller._gene_count_plot(n, a, b)
 
 	# task = "bowtie2 --local -a -x %s -1 %s -2 %s -S %s; samtools view -b -o %s %s; samtools sort %s -o %s -T .temp; samtools index %s; samtools mpileup --ff=1024 -A -Vf %s %s > %s; rm %s; rm %s" % (
 	# 	ref_idx, read_1, read_2, output_name + ".sam", output_name + ".bam", output_name + ".sam", output_name +  ".bam",
