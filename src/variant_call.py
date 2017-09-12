@@ -141,7 +141,7 @@ class VariantCall(object):
 		plt.xlabel('Well')
 		plt.ylabel('Count')
 		plt.title('Number of genes in each well')
-		plt.xticks(index + bar_width / 2)
+		plt.xticks([])
 		plt.legend()
 
 		plt.tight_layout()
