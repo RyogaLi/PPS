@@ -9,52 +9,52 @@ def process_seq_file(seq_file):
 	:param seq_file: all_sequence.txt
 	:return: 
 	"""
-	with open(seq_file, "r") as seq, open("02_all_sequence_HIP.txt", "w") as out, open("03_all_sequence_other.txt", "w") as rep_file:
-		out.write("orf_name\tsource\tcds_seq\taa_seq\n")
-		rep_file.write("orf_name\tsource\tcds_seq\taa_seq\n")
+	HIP = {}
+	PROTGEN = {}
+	SGD = {}
+	with open(seq_file, "r") as seq:
+
+		# store sequences into dictionary based on their class
 		for line in seq:
-			if "orf_name" in line: continue # skip colname
-			line = line.strip().split("\t")
-			ORF_name = line[0]
-			source = line[1]
-			if "-" in ORF_name: # remove all the dashes in orf_name
-				ORF_name = "".join(ORF_name.split("-"))
-			if source == "HIP":
-				out.write(ORF_name+"\t"+source+"\t"+line[2]+"\t"+line[3]+"\n")
-			else:
-				rep_file.write(ORF_name+"\t"+source+"\t"+line[2]+"\t"+line[3]+"\n")
 
+			if "orf_name" in line: continue
+			line = line.split()
 
-def read_file_to_matrix(filename):
-	output = []
-	with open(filename, "r") as file_in:
-		for line in file_in:
-			line = line.strip().split()
-			output.append(line)
-	return np.asmatrix(output)
+			if "-" in line[0]:
+				line[0] = "".join(line[0].split("-"))
+			if line[1] == "HIP":
+				HIP[line[0]] = line[2]
+			elif line[1] == "SGD":
+				SGD[line[0]] = line[2]
+			elif line[1] == "PROTGEN":
+				PROTGEN[line[0]] = line[2]
 
-def make_fasta(input_file):
+	combined = HIP
+	for key in PROTGEN.keys():
+		if key in HIP.keys():
+			continue
+		else:
+			combined[key] = PROTGEN[key]
+
+	for key in SGD.keys():
+		if key in HIP.keys():
+			continue
+		else:
+			combined[key] = SGD[key]
+
+	return combined
+
+def make_fasta(input_dict, output_fasta):
 	"""
 	make a reference (fasta file)
-	:param input_file: 
-	:return: 
 	"""
-	with open(input_file, "r") as fp, open("ORF_reference.fasta", "w") as ref:
-		for line in fp:
-			if "source" in line: continue
-			line = line.strip().split()
-			ref.write(">"+line[0]+"_"+line[1]+"\n")
-			ref.write(line[2]+"\n")
+	with open(output_fasta, "w") as fa:
+		for key in input_dict.keys():
+			fa.write(">"+key+"\n")
+			fa.write(input_dict[key]+"\n")
 
 
 if __name__ == "__main__":
-	# seq_file = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/02_data/all_sequence.txt"
-	# process_seq_file(seq_file)
-
-	# hip = read_file_to_matrix("./02_all_sequence_HIP.txt")
-	# other = read_file_to_matrix("./03_all_sequence_other.txt")
-	# fasta = "ORF_ref.fasta"
-	# os.system('cat ./02_all_sequence_HIP.txt > ./04_removed_dup.txt')
-	# command = "awk 'FNR==NR{a[$1];next}!($1 in a)' ./02_all_sequence_HIP.txt ./03_all_sequence_other.txt >> 04_removed_dup.txt"
-	# os.system(command)
-	make_fasta("./04_removed_dup.txt")
+	seq_file = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/02_data/all_sequence.txt"
+	combined_seqs = process_seq_file(seq_file)
+	make_fasta(combined_seqs, "./ORF_ref.fasta")

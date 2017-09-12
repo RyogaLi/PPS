@@ -14,9 +14,9 @@ import matplotlib.patches as mpatches
 # path to the folder that contains fastq files
 fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/fastq/"
 # path to reference files
-reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
+reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/combined_ref/ORF_combined_ref"
 # path to output directory the last`/` is required!!!
-output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_rev/"
+output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_ref/"
 
 # pattern in file name that can be used to identify R1 and R2
 file_name_pattern = "scORFeome-HIP-[0-9]+_S[0-9]+_L[0-9]+_"
