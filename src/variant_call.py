@@ -171,17 +171,6 @@ class VariantCall(object):
 					if total_files >= 3: break
 		self._gene_count_plot(total_files, gc, fc)
 
-#
 if __name__ == "__main__":
 	variant_caller = VariantCall(reference+".fasta")
 	variant_caller._main()
-	# test plot
-	# a = [2,3,4]
-	# b = [3,4,5]
-	# n = 3
-	# variant_caller._gene_count_plot(n, a, b)
-
-	# task = "bowtie2 --local -a -x %s -1 %s -2 %s -S %s; samtools view -b -o %s %s; samtools sort %s -o %s -T .temp; samtools index %s; samtools mpileup --ff=1024 -A -Vf %s %s > %s; rm %s; rm %s" % (
-	# 	ref_idx, read_1, read_2, output_name + ".sam", output_name + ".bam", output_name + ".sam", output_name +  ".bam",
-	# 	output_name + "_sorted.bam", output_name + "_sorted.bam", ref_file, output_name + "_sorted.bam",
-	# 	output_name + ".txt", output_name + ".sam", output_name + ".bam")
