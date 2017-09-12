@@ -145,7 +145,7 @@ class VariantCall(object):
 		plt.legend()
 
 		plt.tight_layout()
-		plt.show()
+		plt.savefig("./gene_count.png")
 
 	def _main(self):
 		# goto each folder in output dir

@@ -33,5 +33,5 @@ ALIGNMENT_SETTING = "SENSITIVE"
 
 # If the sequence need to be aligned
 # change this variable to False to avoid alignment if the sequences are already aligned
-ALIGN = True
+ALIGN = False
 
