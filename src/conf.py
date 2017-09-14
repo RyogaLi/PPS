@@ -14,7 +14,8 @@ import matplotlib.patches as mpatches
 # path to the folder that contains fastq files
 fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/fastq/"
 # path to reference files
-reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/old_ref/ORF_with_pDONR"
+all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/old_ref/ORF_with_pDONR"
+subset_reference = "" # future
 # path to output directory the last`/` is required!!!
 output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_old_ref/"
 
@@ -34,4 +35,10 @@ ALIGNMENT_SETTING = "SENSITIVE"
 # If the sequence need to be aligned
 # change this variable to False to avoid alignment if the sequences are already aligned
 ALIGN = False
+
+# If variant call is already done, you can set this to False
+# Then the program will only do analysis
+VARIANT_CALL = False
+
+
 

@@ -11,14 +11,20 @@ def main():
 	# alignment
 	# if user want the sequnece file to be aligned first
 	# if only want to call variants with existing reference and bam file, please set the variable to False in conf.py
-	if ALIGN == True:
-		alignment_obj = Alignment(reference, fastq_path, ALIGNMENT_SETTING)
+	if ALIGN:
+		alignment_obj = Alignment(all_reference, fastq_path, ALIGNMENT_SETTING)
 		alignment_obj._main()
 
 	# step 3
-	# variant call and analysis
-	variant_caller = VariantCall(reference + ".fasta")
-	variant_caller._main()
+	# variant call
+	if VARIANT_CALL:
+		variant_caller = VariantCall(all_reference + ".fasta")
+		variant_caller._main()
+
+	# step 4
+	# analysis
+
+
 
 
 if __name__ == "__main__":

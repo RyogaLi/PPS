@@ -1,5 +1,5 @@
 from conf import *
-
+# todo add loggging
 class VariantCall(object):
 	def __init__(self, reference, setting="DEFAULT"):
 		self._reference = reference
@@ -18,44 +18,6 @@ class VariantCall(object):
 		os.system(command)
 		# os.system("bcftools view " + basename + ".raw.vcf | vcfutils.pl varFilter -D100 > " + basename + ".filtered.vcf")
 		return self._raw_vcf
-
-	def _analyze_rd(self):
-		gene_list = {}
-		vcf_reader = vcf.Reader(open(self._raw_vcf))
-		for record in vcf_reader:
-			depth = int(record.INFO["DP"])
-			gene = record.CHROM
-			if gene not in gene_list.keys():
-				gene_list[gene]=[depth]
-			else:
-				gene_list[gene].append(depth)
-		total = 0
-		count = 0
-		for key in gene_list.keys():
-			total += 1
-			gene_list[key]= sum(gene_list[key])/len(gene_list[key])
-			if gene_list[key] < 1 or gene_list[key] >1000: # set threshold
-				count += 1
-				print key
-				print gene_list[key]
-				del gene_list[key]
-
-		# save info to file
-		with open("read_depth.txt", "w") as rd_file:
-			rd_file.write("gene_name\tread_depth\n")
-			for key in gene_list.keys():
-				rd_file.write(key + "\t" + str(gene_list[key]) + "\n")
-		# plot read depth
-		rd = gene_list.values()
-		rd.sort()
-		plt.plot(range(len(rd)), rd, '.')
-		plt.xlabel("Genes")
-		plt.ylabel("read depth")
-		plt.grid(True)
-		plt.savefig("./Read_depth.png")
-		plt.close()
-
-		return gene_list
 
 	def _get_full_cover(self):
 		"""
@@ -155,22 +117,23 @@ class VariantCall(object):
 		fc = []
 		total_files = 0
 		dir_list = os.listdir(output)
+		full_cover, total = None, None
 		for dir in dir_list:
 			if not os.path.isdir(output+"/"+dir): continue
 			os.chdir(output+dir)
+			total_files += 1
 			for file in os.listdir("."):
 				if "_sorted.bam" in file:
-					total_files += 1
 					# call variant
 					self._call_variants(file)
 					# get genes that are fully covered by alignment
 					full_cover, total = self._get_full_cover()
-					snp, indel = self._filter_vcf(full_cover)
+					snp, indel = self._filter_vcf(full_cover) # create filtered vcf file
 					gc.append(total)
 					fc.append(len(full_cover.keys()))
-					if total_files >= 3: break
-		self._gene_count_plot(total_files, gc, fc)
+		gene_count_plot(total_files, gc, fc)
+		return full_cover, total
 
 if __name__ == "__main__":
-	variant_caller = VariantCall(reference+".fasta")
+	variant_caller = VariantCall(all_reference+".fasta")
 	variant_caller._main()
