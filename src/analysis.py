@@ -44,7 +44,7 @@ def gene_count_plot(n, gc, fc):
 def get_full_cover(self):
 	"""
 	Get a dictionary of gene names which are fully covered(aligned) in vcf file
-	:return: dictionary with keys = gene names value = gene length
+	:return: dictionary with keys = gene names; value = gene length
 	"""
 	with open(self._raw_vcf, "r") as raw:
 		gene_dict = {}
@@ -55,12 +55,18 @@ def get_full_cover(self):
 			if id_line:
 				ref_dict[id_line.group(1)] = int(id_line.group(2))
 			if "#" not in line:
-				# if "INDEL" in line: continue
 				line = line.split()
 				if line[0] not in gene_dict.keys():
-					gene_dict[line[0]] = 1
+					# grep read depth information from INFO section
+					rd = re.search("DP=([0-9]+)", line[7])
+					rd = rd.group(1)
+					gene_dict[line[0]] = [1, rd]
 				else:
-					gene_dict[line[0]] +=1
+					# grep read depth information from INFO section
+					rd = re.search("DP=([0-9]+)", line[7])
+					rd = rd.group(1)
+					gene_dict[line[0]][0]+=1
+					gene_dict[line[0]][1]+=rd
 
 				if line[0] not in total_gene_count:
 					total_gene_count.append(line[0])
@@ -68,10 +74,14 @@ def get_full_cover(self):
 		for key in gene_dict.keys():
 			if gene_dict[key] < int(ref_dict[key]):
 				del gene_dict[key]
+			else:
+				avg_rd = gene_dict[key][1] / gene_dict[key][0]
+				gene_dict[key][1] = avg_rd
 
 	return gene_dict, len(total_gene_count)
 
-def _filter_vcf(self, gene_names):
+
+def filter_vcf(file, gene_names):
 	"""
 	Filter vcf file with only genes in the gene_dictionary 
 	:param gene_names: 
@@ -79,9 +89,11 @@ def _filter_vcf(self, gene_names):
 	"""
 	snp_count = {}
 	indel_count = {}
+	read_depth = {}
+	file_basename = os.path.basename(file).split(".")[0]
 	# create reader and writer
-	with open(self._raw_vcf, "r") as raw_vcf:
-		with open(self._basename+"_filtered.vcf", "w") as filtered:
+	with open(file, "r") as raw_vcf:
+		with open(file_basename+"_filtered.vcf", "w") as filtered:
 			for line in raw_vcf:
 				# eliminate header
 				if line.startswith("##"):
@@ -90,8 +102,8 @@ def _filter_vcf(self, gene_names):
 				line = line.split()
 				if line[0] not in gene_names.keys():
 					continue
+				read_depth[line[0]] = gene_names[line[0]][1]
 				# count SNP and INDEL for each gene
-
 				if "INDEL" in line[-3]:
 					if line[0] in indel_count.keys():
 						indel_count[line[0]] += 1
@@ -105,7 +117,7 @@ def _filter_vcf(self, gene_names):
 
 				# write record to file
 				filtered.write("\t".join(line)+"\n")
-	return snp_count, indel_count
+	return snp_count, indel_count, read_depth
 
 
 
