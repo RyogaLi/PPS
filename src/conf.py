@@ -41,4 +41,3 @@ ALIGN = False
 VARIANT_CALL = False
 
 
-

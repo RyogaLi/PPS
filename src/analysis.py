@@ -41,12 +41,12 @@ def gene_count_plot(n, gc, fc):
 	plt.tight_layout()
 	plt.savefig("./gene_count.png")
 
-def get_full_cover(self):
+def get_full_cover(file):
 	"""
 	Get a dictionary of gene names which are fully covered(aligned) in vcf file
 	:return: dictionary with keys = gene names; value = gene length
 	"""
-	with open(self._raw_vcf, "r") as raw:
+	with open(file, "r") as raw:
 		gene_dict = {}
 		ref_dict = {}
 		total_gene_count= []
@@ -56,18 +56,19 @@ def get_full_cover(self):
 				ref_dict[id_line.group(1)] = int(id_line.group(2))
 			if "#" not in line:
 				line = line.split()
+				# print line[7]
 				if line[0] not in gene_dict.keys():
 					# grep read depth information from INFO section
 					rd = re.search("DP=([0-9]+)", line[7])
 					rd = rd.group(1)
-					gene_dict[line[0]] = [1, rd]
+					gene_dict[line[0]] = [1, int(rd)]
 				else:
 					# grep read depth information from INFO section
+
 					rd = re.search("DP=([0-9]+)", line[7])
 					rd = rd.group(1)
 					gene_dict[line[0]][0]+=1
-					gene_dict[line[0]][1]+=rd
-
+					gene_dict[line[0]][1]+=int(rd)
 				if line[0] not in total_gene_count:
 					total_gene_count.append(line[0])
 
@@ -75,7 +76,7 @@ def get_full_cover(self):
 			if gene_dict[key] < int(ref_dict[key]):
 				del gene_dict[key]
 			else:
-				avg_rd = gene_dict[key][1] / gene_dict[key][0]
+				avg_rd = float(gene_dict[key][1])/ gene_dict[key][0]
 				gene_dict[key][1] = avg_rd
 
 	return gene_dict, len(total_gene_count)
@@ -114,21 +115,20 @@ def filter_vcf(file, gene_names):
 						snp_count[line[0]] += 1
 					else:
 						snp_count[line[0]] = 1
-
 				# write record to file
 				filtered.write("\t".join(line)+"\n")
 	return snp_count, indel_count, read_depth
 
 
-
-if __name__ == "__main__":
-	# todo compare alignment rate of different reference files
-	old_ref_rate = get_alignment_rate("/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_old_ref/")
-	combined_ref_rate = get_alignment_rate("/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_ref/")
-
-	plt.plot(range(len(old_ref_rate)), old_ref_rate, '.')
-	plt.plot(range(len(combined_ref_rate)), combined_ref_rate, '.')
-	plt.title("Compare alignment rate")
-	plt.xlabel("plate")
-	plt.ylabel("% aligned")
-	plt.savefig("alignment_rate.png")
+#
+# if __name__ == "__main__":
+# 	# todo compare alignment rate of different reference files
+# 	old_ref_rate = get_alignment_rate("/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_old_ref/")
+# 	combined_ref_rate = get_alignment_rate("/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_ref/")
+#
+# 	plt.plot(range(len(old_ref_rate)), old_ref_rate, '.')
+# 	plt.plot(range(len(combined_ref_rate)), combined_ref_rate, '.')
+# 	plt.title("Compare alignment rate")
+# 	plt.xlabel("plate")
+# 	plt.ylabel("% aligned")
+# 	plt.savefig("alignment_rate.png")

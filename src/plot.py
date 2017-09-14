@@ -91,6 +91,31 @@ def plot_recover_rate(output_dir):
 	plt.ylabel("% covered")
 	plt.savefig("percent_recovered.png")
 
-if __name__ == "__main__":
-	# plot_readdepth_genecount(output)
-	plot_recover_rate(output)
+def plot_top_n(snp, indel, avg_rd, n):
+	"""
+	plot top n genes 
+	:param snp: 
+	:param indel: 
+	:param avg_rd: 
+	:return: 
+	"""
+	top_n = sorted(avg_rd, key=avg_rd.get)[:n]
+	s = []
+	i = []
+	rd = []
+	for key in top_n:
+		s.append(snp[key])
+		i.append(indel[key])
+		rd.append(avg_rd[key])
+
+	plt.plot(n, s, ".")
+	plt.plot(n, i, ".")
+	plt.plot(n, rd, ".")
+	plt.title("Top genes analysis")
+	plt.xlabel("Gene names")
+	plt.savefig("top_genes.png")
+
+
+# if __name__ == "__main__":
+# 	# plot_readdepth_genecount(output)
+# 	plot_recover_rate(output)

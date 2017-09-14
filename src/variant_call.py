@@ -56,14 +56,7 @@ class VariantCall(object):
 				if "_sorted.bam" in file:
 					# call variant
 					self._call_variants(file)
-					# get genes that are fully covered by alignment
-		# 			full_cover, total = self._get_full_cover()
-		# 			snp, indel = self._filter_vcf(full_cover) # create filtered vcf file
-		# 			gc.append(total)
-		# 			fc.append(len(full_cover.keys()))
-		# gene_count_plot(total_files, gc, fc)
-		# return full_cover, total
 
-if __name__ == "__main__":
-	variant_caller = VariantCall(all_reference+".fasta")
-	variant_caller._main()
+# if __name__ == "__main__":
+# 	variant_caller = VariantCall(all_reference+".fasta")
+# 	variant_caller._main()
