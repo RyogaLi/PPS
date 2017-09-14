@@ -61,10 +61,7 @@ class Alignment(object):
 				output.write(key+"\t"+str(gene_count[key])+"\n")
 
 	def _main(self):
-		# create a dir for each alignment
-		if os.path.exists("./log"):
-			shutil.rmtree("./log")
-		os.makedirs("./log")
+
 		# init logging
 		logging.config.fileConfig("./src/logging.conf")
 		logger = logging.getLogger("alignment")

@@ -1,5 +1,4 @@
 from conf import *
-from plot import *
 
 def get_alignment_rate(directory):
 	"""
@@ -76,7 +75,7 @@ def get_full_cover(file):
 			if gene_dict[key] < int(ref_dict[key]):
 				del gene_dict[key]
 			else:
-				avg_rd = float(gene_dict[key][1])/ gene_dict[key][0]
+				avg_rd = gene_dict[key][1]/ gene_dict[key][0]
 				gene_dict[key][1] = avg_rd
 
 	return gene_dict, len(total_gene_count)
@@ -101,7 +100,7 @@ def filter_vcf(file, gene_names):
 					continue
 				# remove unwanted genes
 				line = line.split()
-				if line[0] not in gene_names.keys():
+				if line[0] not in gene_names.keys() or "PDONR" in line[0]:
 					continue
 				read_depth[line[0]] = gene_names[line[0]][1]
 				# count SNP and INDEL for each gene

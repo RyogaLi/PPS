@@ -99,21 +99,24 @@ def plot_top_n(snp, indel, avg_rd, n):
 	:param avg_rd: 
 	:return: 
 	"""
-	top_n = sorted(avg_rd, key=avg_rd.get)[:n]
+	top_n = sorted(avg_rd, key=avg_rd.get, reverse=True)[:n]
 	s = []
 	i = []
 	rd = []
 	for key in top_n:
-		s.append(snp[key])
-		i.append(indel[key])
+		# s.append(snp[key])
+		# i.append(indel[key])
 		rd.append(avg_rd[key])
-
-	plt.plot(n, s, ".")
-	plt.plot(n, i, ".")
-	plt.plot(n, rd, ".")
+	# plt.plot(n, s, ".")
+	# plt.plot(n, i, ".")
+	plt.plot(range(n), rd, "o")
 	plt.title("Top genes analysis")
+	plt.ylim([0,1000])
+	# plt.xlim([0,n+2])
 	plt.xlabel("Gene names")
+	plt.xticks(range(n), top_n)
 	plt.savefig("top_genes.png")
+	plt.close()
 
 
 # if __name__ == "__main__":
