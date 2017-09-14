@@ -7,7 +7,8 @@
 
 ## Input
 * Reference file: `reference.fasta`
-* fastq files: `*_R1.fastq` and `*_R2.fastq`
+* For paired fastq files: `*_R1.fastq` and `*_R2.fastq` 
+* For unpaired fastq files: `*.fastq`
 
 ## Run
 0. If you haven't build index for the fasta file, please run the following command to build index files
