@@ -48,7 +48,6 @@ def get_full_cover(file):
 	with open(file, "r") as raw:
 		gene_dict = {}
 		ref_dict = {}
-		total_gene_count= []
 		for line in raw:
 			id_line = re.search("<ID=(.+?),length=(.+?)>", line)
 			if id_line:
@@ -68,17 +67,16 @@ def get_full_cover(file):
 					rd = rd.group(1)
 					gene_dict[line[0]][0]+=1
 					gene_dict[line[0]][1]+=int(rd)
-				if line[0] not in total_gene_count:
-					total_gene_count.append(line[0])
 
-		for key in gene_dict.keys():
-			if gene_dict[key] < int(ref_dict[key]):
-				del gene_dict[key]
+		remove_genes = gene_dict
+		for key in remove_genes.keys():
+			if remove_genes[key] < int(ref_dict[key]):
+				del remove_genes[key]
 			else:
-				avg_rd = gene_dict[key][1]/ gene_dict[key][0]
-				gene_dict[key][1] = avg_rd
+				avg_rd = remove_genes[key][1]/ remove_genes[key][0]
+				remove_genes[key][1] = avg_rd
 
-	return gene_dict, len(total_gene_count)
+	return remove_genes, len(gene_dict.keys()), gene_dict, ref_dict
 
 
 def filter_vcf(file, gene_names):
