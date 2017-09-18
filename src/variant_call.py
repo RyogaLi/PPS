@@ -1,5 +1,6 @@
 from conf import *
-# todo add loggging
+
+
 class VariantCall(object):
 	def __init__(self, reference, setting="DEFAULT"):
 		self._reference = reference
@@ -18,29 +19,6 @@ class VariantCall(object):
 		# os.system("bcftools view " + basename + ".raw.vcf | vcfutils.pl varFilter -D100 > " + basename + ".filtered.vcf")
 		return self._raw_vcf
 
-	def _gene_count_plot(self, n, gc, fc):
-		"""
-		make a bar chart
-		:param n: number of classes 
-		:param y: value
-		:return: 
-		"""
-		fig, ax = plt.subplots()
-		index = np.arange(n)
-		bar_width = 0.2
-
-		opacity = 0.4
-		rects1 = plt.bar(index, gc, bar_width, alpha=opacity, color='b',label='Gene count')
-
-		rects2 = plt.bar(index + bar_width, fc, bar_width,alpha=opacity,color='r',label='Full covered gene count')
-		plt.xlabel('Well')
-		plt.ylabel('Count')
-		plt.title('Number of genes in each well')
-		plt.xticks([])
-		plt.legend()
-
-		plt.tight_layout()
-		plt.savefig("./gene_count.png")
 
 	def _main(self):
 		# goto each folder in output dir

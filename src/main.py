@@ -72,8 +72,9 @@ def main():
 				# write this information to file
 				# full_covered.csv
 				# plate gene snp indel
-				out_file = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/full_covered_gene.csv"
+				out_file = open("/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/full_covered_gene.csv", "w")
 				write_full_cover(file,all_gene_dict, full_cover, snp, indel, ref_dict, out_file)
+				out_file.close()
 
 				# take top 5 genes based on read depth
 				# plot_top_n(snp, indel, read_depth, 3)

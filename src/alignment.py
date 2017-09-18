@@ -6,8 +6,9 @@ import shutil
 
 class Alignment(object):
 
-	def __init__(self, reference, fastq_path, setting):
-		self._reference = reference
+	def __init__(self, all_reference, subset_reference,fastq_path, setting):
+		self._reference = all_reference
+		self._sub_reference = subset_reference
 		self._fastq_path = fastq_path
 		self._setting = setting
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
 	# get all the names of fastq file
 # 	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
 # 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
-	alignment_obj = Alignment(reference, fastq_path, ALIGNMENT_SETTING)
+	alignment_obj = Alignment(all_reference,subset_reference, fastq_path, ALIGNMENT_SETTING)
 	alignment_obj._main()
 	# alignment_obj._gene_count()
 

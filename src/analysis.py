@@ -62,12 +62,10 @@ def get_full_cover(file):
 					gene_dict[line[0]] = [1, int(rd)]
 				else:
 					# grep read depth information from INFO section
-
 					rd = re.search("DP=([0-9]+)", line[7])
 					rd = rd.group(1)
 					gene_dict[line[0]][0]+=1
 					gene_dict[line[0]][1]+=int(rd)
-
 		remove_genes = gene_dict
 		for key in remove_genes.keys():
 			if remove_genes[key] < int(ref_dict[key]):
@@ -115,7 +113,6 @@ def filter_vcf(file, gene_names):
 				# write record to file
 				filtered.write("\t".join(line)+"\n")
 	return snp_count, indel_count, read_depth
-
 
 #
 # if __name__ == "__main__":

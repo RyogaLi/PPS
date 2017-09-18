@@ -9,6 +9,13 @@
 * Reference file: `reference.fasta`
 * For paired fastq files: `*_R1.fastq` and `*_R2.fastq` 
 * For unpaired fastq files: `*.fastq`
+* To combine unpaired r1 and r2 fastq files, please provide path to fastq files in `conf.py` run:
+    
+    ```
+    python src/sup.py combine
+    ```
+    Combined fastq files will be saved into the same directory as old fastq files
+ 
 
 ## Run
 0. If you haven't build index for the fasta file, please run the following command to build index files
