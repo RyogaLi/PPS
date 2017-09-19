@@ -118,7 +118,43 @@ def plot_top_n(snp, indel, avg_rd, n):
 	plt.savefig("top_genes.png")
 	plt.close()
 
+def plot_recover(f):
+	"""
+	plot %aligned VS %recovered
+	:param f: 
+	:return: 
+	"""
+	recovered = {}
+	with open(f, "r") as f:
+		for line in f:
+			if "plate_name" in line: continue
+			line = line.split(",")
+			recovered[line[1]] = float(line[4])
+	# if the gene is aligned twice, take the one with higher value
+	temp = {} # dict with unique gene names
+	for key in recovered.keys():
+		if key not in temp:
+			temp[key]=recovered[key]
+		else:
+			if recovered[key]>temp[key]:
+				temp[key] = recovered[key]
+	total = len(temp.values())
+	print total
+	out = []
+	aligned = temp.values()
+	aligned.sort()
+	for value in aligned:
+		recovered_percent = len([i for i in aligned if i >value])/total
+		out.append(recovered_percent)
 
-# if __name__ == "__main__":
-# 	# plot_readdepth_genecount(output)
-# 	plot_recover_rate(output)
+
+	plt.plot(aligned, out, "-")
+
+	plt.xlabel("percent aligned")
+	plt.ylabel("percent recovered")
+	plt.savefig("./aligned_recovered_plot.png")
+
+
+if __name__ == "__main__":
+	# plot_readdepth_genecount(output)
+	plot_recover("./full_covered_gene.csv")

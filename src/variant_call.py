@@ -1,6 +1,5 @@
 from conf import *
 
-
 class VariantCall(object):
 	def __init__(self, reference, setting="DEFAULT"):
 		self._reference = reference
@@ -20,12 +19,13 @@ class VariantCall(object):
 		return self._raw_vcf
 
 
+	def _free_baye(self, bam):
+		pass
+
+
 	def _main(self):
 		# goto each folder in output dir
 		# run this inside the dir
-		read_depth = {}
-		gc = []
-		fc = []
 		dir_list = os.listdir(output)
 		for dir in dir_list:
 			if not os.path.isdir(output+"/"+dir): continue

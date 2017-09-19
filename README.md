@@ -9,7 +9,7 @@
 * Reference file: `reference.fasta`
 * For paired fastq files: `*_R1.fastq` and `*_R2.fastq` 
 * For unpaired fastq files: `*.fastq`
-* To combine unpaired r1 and r2 fastq files, please provide path to fastq files in `conf.py` run:
+* To combine unpaired r1 and r2 fastq files, please provide path to fastq files in `conf.py` then run:
     
     ```
     python src/sup.py combine

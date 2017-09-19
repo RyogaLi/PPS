@@ -1,3 +1,4 @@
+from __future__ import division
 from alignment import *
 from variant_call import *
 from analysis import *
@@ -7,13 +8,14 @@ import logging.config
 
 def write_full_cover(plate_name, all_genes, full_cover_genes, snp, indel, ref_dict, output_file):
 	with open(output_file, "a") as output_file:
+		output_file.write("plate_name,gene_name,gene_length,aligned_length,alignment_rate,average_read_depth,number_of_SNP,number_of_INDEL\n")
 		for gene in all_genes.keys():
 			if gene in full_cover_genes:
 				all_genes = full_cover_genes
 			if gene in snp.keys():
-				line = [plate_name, gene, str(ref_dict[gene]), str(all_genes[gene][0]),str(all_genes[gene][1]),str(snp[gene]),"N/A"]
+				line = [plate_name, gene, str(ref_dict[gene]), str(all_genes[gene][0]),str(all_genes[gene][0]/ref_dict[gene]),str(all_genes[gene][1]),str(snp[gene]),"0"]
 			else:
-				line = [plate_name, gene, str(ref_dict[gene]),str(all_genes[gene][0]),str(all_genes[gene][1]), "N/A", "N/A"]
+				line = [plate_name, gene, str(ref_dict[gene]),str(all_genes[gene][0]),str(all_genes[gene][0]/ref_dict[gene]),str(all_genes[gene][1]), "0", "0"]
 			if gene in indel.keys():
 				line[-1] = str(indel[gene])
 			output_file.write(",".join(line)+"\n")
@@ -36,7 +38,7 @@ def main():
 	# if user want the sequnece file to be aligned first
 	# if only want to call variants with existing reference and bam file, please set the variable to False in conf.py
 	if ALIGN:
-		alignment_obj = Alignment(all_reference, fastq_path, ALIGNMENT_SETTING)
+		alignment_obj = Alignment(all_reference, subset_reference, fastq_path, ALIGNMENT_SETTING)
 		alignment_obj._main()
 
 	# step 3
@@ -72,9 +74,9 @@ def main():
 				# write this information to file
 				# full_covered.csv
 				# plate gene snp indel
-				out_file = open("/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/full_covered_gene.csv", "w")
-				write_full_cover(file,all_gene_dict, full_cover, snp, indel, ref_dict, out_file)
-				out_file.close()
+				out_file = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/full_covered_gene.csv"
+				write_full_cover(file, all_gene_dict, full_cover, snp, indel, ref_dict, out_file)
+
 
 				# take top 5 genes based on read depth
 				# plot_top_n(snp, indel, read_depth, 3)

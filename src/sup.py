@@ -1,5 +1,5 @@
 # some supplimentary functions
-
+# todo remove smorf in ref and align
 from conf import *
 
 def combine_fastq(f1, f2):
@@ -11,21 +11,33 @@ def combine_fastq(f1, f2):
 	:return: 
 	"""
 	# change all the ids in f2
-	new_r2 = "./temp.txt"
-	with open(f2, "r") as r2:
+	new_r2 = f1.split("_R1")[0] + ".fastq"
+	with open(f2, "r") as r2, open(f1, "r") as r1:
 		with open(new_r2, "w") as new:
-			for line in r2:
-				if line.startswith("@"):
-					line = line.split()
-					id = line[0]+"_1"
-					new.write(id+"\n")
+			for line in r1:
+				if line.startswith("@M00730"):
+					line = line.split(" ")
+					# print line[1:]
+					line[1] = "1"+line[1][1:]
+					id = "_".join(line)
+					new.write(id)
 				else:
 					new.write(line)
-	# combine r1 and r2
-	new_filename = f1.split("_R1")[0]+".fastq"
-	os.system("cp "+f1+" "+new_filename)
-	os.system("cat temp.txt >> "+new_filename)
-	os.system("rm temp.txt")
+			for line in r2:
+				if line.startswith("@M00730"):
+					line = line.split(" ")
+					# print line[1:]
+					line[1] = "1"+line[1][1:]
+					id = "_".join(line)
+					new.write(id)
+				else:
+					new.write(line)
+
+	# # combine r1 and r2
+	# new_filename = f1.split("_R1")[0]+".fastq"
+	# os.system("cp "+f1+" "+new_filename)
+	# os.system("cat temp.fastq >> "+new_filename)
+	# os.system("rm temp.fastq")
 
 if __name__ == '__main__':
 
