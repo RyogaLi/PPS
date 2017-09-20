@@ -39,6 +39,7 @@ def combine_fastq(f1, f2):
 	# os.system("cat temp.fastq >> "+new_filename)
 	# os.system("rm temp.fastq")
 
+
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Supplementary functions')

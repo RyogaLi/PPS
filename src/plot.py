@@ -139,7 +139,7 @@ def plot_recover(f):
 			if recovered[key]>temp[key]:
 				temp[key] = recovered[key]
 	total = len(temp.values())
-	print total
+
 	out = []
 	aligned = temp.values()
 	aligned.sort()
