@@ -51,14 +51,12 @@ def main():
 	# analysis
 	# after variant calling
 	# filter vcf file and get fully aligned genes with their avg read depth
-
 	# go thru all output directory
 	dir_list = os.listdir(output)
 	for dir in dir_list:
 		if not os.path.isdir(output + "/" + dir): continue
 		os.chdir(os.path.join(output,dir))
 		for file in os.listdir("."):
-
 			if file.endswith(".log") and os.stat(file).st_size == 0:
 				os.remove(file)
 			if file.endswith(".raw.vcf"):

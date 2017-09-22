@@ -13,6 +13,8 @@ import argparse
 from scipy.stats.stats import pearsonr
 import matplotlib.patches as mpatches
 
+######### FILE PARHs ##########
+
 # path to the folder that contains fastq files
 # fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/combined_fastq/"
 fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/hip/"
@@ -23,13 +25,15 @@ all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/sub
 # all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/hip_ref/ORF_hip"
 # all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/other_ref/ORF_other"
 subset_reference = ""
+
 # path to output directory the last`/` is required!!!
 output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_fastq_subset_ref/"
 
 # pattern in file name that can be used to identify R1 and R2
 file_name_pattern = "scORFeome-HIP-[0-9]+_S[0-9]+_L[0-9]+_"
 
-# variables
+
+######### VARIABLES ##########
 
 # if the fastq files are paired
 PAIRED = False

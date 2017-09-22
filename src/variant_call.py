@@ -18,11 +18,6 @@ class VariantCall(object):
 		# os.system("bcftools view " + basename + ".raw.vcf | vcfutils.pl varFilter -D100 > " + basename + ".filtered.vcf")
 		return self._raw_vcf
 
-
-	def _free_baye(self, bam):
-		pass
-
-
 	def _main(self):
 		# goto each folder in output dir
 		# run this inside the dir

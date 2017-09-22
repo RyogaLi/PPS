@@ -33,12 +33,6 @@ def combine_fastq(f1, f2):
 				else:
 					new.write(line)
 
-	# # combine r1 and r2
-	# new_filename = f1.split("_R1")[0]+".fastq"
-	# os.system("cp "+f1+" "+new_filename)
-	# os.system("cat temp.fastq >> "+new_filename)
-	# os.system("rm temp.fastq")
-
 
 if __name__ == '__main__':
 
