@@ -27,9 +27,9 @@ def main():
 	# check fastq files
 	# log these information
 	# create a dir for each alignment
-	if os.path.exists("./log"):
-		shutil.rmtree("./log")
-	os.makedirs("./log")
+	if os.path.exists(output+"log"):
+		shutil.rmtree(output+"log")
+	os.makedirs(output+"log")
 	logging.config.fileConfig("./src/logging.conf")
 	logger = logging.getLogger("main")
 
@@ -61,7 +61,6 @@ def main():
 
 			if file.endswith(".log") and os.stat(file).st_size == 0:
 				os.remove(file)
-			logger.info("Removed empty log files in %s", dir)
 			if file.endswith(".raw.vcf"):
 				# full_cover is a dictionary contains key=gene ids for genes that are fully covered
 				# value = [fully covered gene length, average read depth for this gene]
@@ -74,7 +73,7 @@ def main():
 				# write this information to file
 				# full_covered.csv
 				# plate gene snp indel
-				out_file = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/full_covered_gene.csv"
+				out_file = output + "summary.csv"
 				write_full_cover(file, all_gene_dict, full_cover, snp, indel, ref_dict, out_file)
 
 

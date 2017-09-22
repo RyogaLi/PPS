@@ -105,7 +105,7 @@ def filter_vcf(file, gene_names):
 						indel_count[line[0]] += 1
 					else:
 						indel_count[line[0]] = 1
-				elif line[4] != "<*>":
+				elif "<*>" not in line[4]:
 					if line[0] in snp_count.keys():
 						snp_count[line[0]] += 1
 					else:
@@ -116,7 +116,6 @@ def filter_vcf(file, gene_names):
 
 #
 # if __name__ == "__main__":
-# 	# todo compare alignment rate of different reference files
 # 	old_ref_rate = get_alignment_rate("/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_old_ref/")
 # 	combined_ref_rate = get_alignment_rate("/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_ref/")
 #

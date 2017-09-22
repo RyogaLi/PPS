@@ -14,10 +14,15 @@ from scipy.stats.stats import pearsonr
 import matplotlib.patches as mpatches
 
 # path to the folder that contains fastq files
-fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/combined_fastq/"
+# fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/combined_fastq/"
+fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/hip/"
+# fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/other/"
+
 # path to reference files
 all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/subset_ref/ORF_combined_ref"
-subset_reference = "" # future
+# all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/hip_ref/ORF_hip"
+# all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/other_ref/ORF_other"
+subset_reference = ""
 # path to output directory the last`/` is required!!!
 output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_fastq_subset_ref/"
 
