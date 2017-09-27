@@ -1,46 +1,5 @@
 from conf import *
 
-def get_alignment_rate(directory):
-	"""
-	get alignment rate from .log file in directory
-	:param directory: 
-	:return: 
-	"""
-	percentages = []
-	file_list = os.listdir(directory)
-	for dirpath, dirnames, filenames in os.walk(directory):
-		for filename in filenames:
-			if filename.startswith("bowtie_"):
-				line = subprocess.check_output(['tail', '-1', os.path.join(dirpath, filename)])
-				per = float(line.split("%")[0])
-				percentages.append(per)
-	return percentages
-
-
-def gene_count_plot(n, gc, fc):
-	"""
-	make a bar chart
-	:param n: number of classes 
-	:param y: value
-	:return: 
-	"""
-	fig, ax = plt.subplots()
-	index = np.arange(n)
-	bar_width = 0.2
-
-	opacity = 0.4
-	rects1 = plt.bar(index, gc, bar_width, alpha=opacity, color='b',label='Gene count')
-
-	rects2 = plt.bar(index + bar_width, fc, bar_width,alpha=opacity,color='r',label='Full covered gene count')
-	plt.xlabel('Well')
-	plt.ylabel('Count')
-	plt.title('Number of genes in each well')
-	plt.xticks([])
-	plt.legend()
-
-	plt.tight_layout()
-	plt.savefig("./gene_count.png")
-
 
 def get_full_cover(file):
 	"""
@@ -74,7 +33,7 @@ def get_full_cover(file):
 				del remove_genes[key]
 			else:
 				avg_rd = remove_genes[key][1]/ remove_genes[key][0]
-				remove_genes[key][1] = avg_rd
+				remove_genes[key].append(avg_rd)
 
 	return remove_genes, len(gene_dict.keys()), gene_dict, ref_dict
 
@@ -102,16 +61,61 @@ def filter_vcf(file, gene_names):
 					continue
 				read_depth[line[0]] = gene_names[line[0]][1]
 				# count SNP and INDEL for each gene
-				if "INDEL" in line[-3]:
+				if "INDEL" in line[-3]: # an INDEL
 					if line[0] in indel_count.keys():
 						indel_count[line[0]] += 1
 					else:
 						indel_count[line[0]] = 1
-				elif "<*>" not in line[4]:
+				elif "<*>" not in line[4]: # SNP
+					# for each SNP, find out position and ALT
 					if line[0] in snp_count.keys():
-						snp_count[line[0]] += 1
+						snp_count[line[0]].append((int(line[1]),line[4][0]))
 					else:
-						snp_count[line[0]] = 1
+						snp_count[line[0]] = [(int(line[1]),line[4][0])]
 				# write record to file
 				filtered.write("\t".join(line)+"\n")
 	return snp_count, indel_count, read_depth
+
+def remove_synonymous(snp_dict, dna_seq):
+	"""
+	for each mutation in snp_dict, find out if the mutation is synomounos 
+	:param snp_dict: 
+	:param dna_seq: 
+	:return: 
+	"""
+	non_syn_dict = {}
+	for protein in snp_dict.keys():
+		# get dna seq from dna_seq
+		# print snp_dict[protein]
+		dna = dna_seq[protein]
+		# print dna
+		altered_dna = list(dna)
+		# alter all the bp in original dna seq
+		for pos in snp_dict[protein]:
+			# print pos
+			altered_dna[pos[0]-1] = pos[1]
+		altered_dna = "".join(altered_dna)
+
+		dna = Seq(dna, generic_dna)
+		ref_protein = dna.translate(to_stop=True)
+
+		altered_dna = Seq(altered_dna, generic_dna)
+		altered_protein = altered_dna.translate(to_stop=True)
+
+		non_syn = []
+		# find position that are different
+		for i in range(len(altered_protein)):
+			if altered_protein[i] != ref_protein[i]:
+				dna_range=range(i,(i+1)*3)
+				snp = dict(snp_dict[protein])
+				# print snp
+				# for all the snp in that range, add them to non-syn
+				for pos in dna_range:
+					try:
+						non_syn.append((pos, snp[pos]))
+					except Exception as e:
+						# print("exc")
+						pass
+		non_syn_dict[protein] = non_syn
+
+	return non_syn_dict

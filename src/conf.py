@@ -10,18 +10,21 @@ import plotly.graph_objs as go
 import seaborn as sns
 import numpy as np
 import argparse
-from scipy.stats.stats import pearsonr
 import matplotlib.patches as mpatches
+from scipy.stats.stats import pearsonr
+from Bio.Seq import Seq
+from Bio.Alphabet import generic_dna
 
 ######### FILE PARHs ##########
 
 # path to the folder that contains fastq files
-# fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/combined_fastq/"
-fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/hip/"
+fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/combined_fastq/"
+# fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/hip/"
 # fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/other/"
 
 # path to reference files
 all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/subset_ref/ORF_combined_ref"
+ref_fasta = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/subset_ref/ORF_combined_ref.fasta"
 # all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/hip_ref/ORF_hip"
 # all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/other_ref/ORF_other"
 subset_reference = ""
@@ -49,5 +52,9 @@ ALIGN = False
 # If variant call is already done, you can set this to False
 # Then the program will only do analysis
 VARIANT_CALL = False
+
+# If you want to remove all the synomuous SNPs
+# set this to True
+remove_syn = True
 
 

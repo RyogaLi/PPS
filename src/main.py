@@ -3,19 +3,36 @@ from alignment import *
 from variant_call import *
 from analysis import *
 from plot import *
+from sup import *
 import logging.config
 
 
 def write_full_cover(plate_name, all_genes, full_cover_genes, snp, indel, ref_dict, output_file):
 	with open(output_file, "a") as output_file:
-		output_file.write("plate_name,gene_name,gene_length,aligned_length,alignment_rate,average_read_depth,number_of_SNP,number_of_INDEL\n")
+		output_file.write("plate_name,gene_name,gene_length,aligned_length,alignment_rate,total_read_count,average_read_depth,number_of_SNP,number_of_INDEL\n")
 		for gene in all_genes.keys():
 			if gene in full_cover_genes:
 				all_genes = full_cover_genes
 			if gene in snp.keys():
-				line = [plate_name, gene, str(ref_dict[gene]), str(all_genes[gene][0]),str(all_genes[gene][0]/ref_dict[gene]),str(all_genes[gene][1]),str(snp[gene]),"0"]
+				line = [plate_name,
+						gene,
+						str(ref_dict[gene]),
+						str(all_genes[gene][0]),
+						str(all_genes[gene][0]/ref_dict[gene]),
+						str(all_genes[gene][1]),
+						str(all_genes[gene][2]),
+						str(len(snp[gene])),
+						"0"]
 			else:
-				line = [plate_name, gene, str(ref_dict[gene]),str(all_genes[gene][0]),str(all_genes[gene][0]/ref_dict[gene]),str(all_genes[gene][1]), "0", "0"]
+				line = [plate_name,
+						gene,
+						str(ref_dict[gene]),
+						str(all_genes[gene][0]),
+						str(all_genes[gene][0]/ref_dict[gene]),
+						str(all_genes[gene][1]),
+						str(all_genes[gene][2]),
+						"0",
+						"0"]
 			if gene in indel.keys():
 				line[-1] = str(indel[gene])
 			output_file.write(",".join(line)+"\n")
@@ -27,9 +44,9 @@ def main():
 	# check fastq files
 	# log these information
 	# create a dir for each alignment
-	if os.path.exists(output+"log"):
-		shutil.rmtree(output+"log")
-	os.makedirs(output+"log")
+	if os.path.exists("log"):
+		shutil.rmtree("log")
+	os.makedirs("log")
 	logging.config.fileConfig("./src/logging.conf")
 	logger = logging.getLogger("main")
 
@@ -68,18 +85,25 @@ def main():
 				snp, indel, read_depth = filter_vcf(file, all_gene_dict)
 				logger.info("Filtered %s", file)
 
-				# write this information to file
-				# full_covered.csv
-				# plate gene snp indel
-				out_file = output + "summary.csv"
-				write_full_cover(file, all_gene_dict, full_cover, snp, indel, ref_dict, out_file)
+				if remove_syn:
+					# print "Here"
+					dna_seq = get_dna_ref(ref_fasta)
+					# print dna_seq
+					filterd_snp = remove_synonymous(snp, dna_seq)
+					# write this information to file
+					# full_covered.csv
+					# plate gene snp indel
+					out_file = output + "filtered_synonymous_summary.csv"
+					write_full_cover(file, all_gene_dict, full_cover, filterd_snp, indel, ref_dict, out_file)
 
+				else:
+					out_file = output + "summary.csv"
+					write_full_cover(file, all_gene_dict, full_cover, snp, indel, ref_dict, out_file)
 
 				# take top 5 genes based on read depth
 				# plot_top_n(snp, indel, read_depth, 3)
 				# logger.info("Plot generated")
 				logger.info("Analaysis done for %s \n", file)
-
 
 if __name__ == "__main__":
 	main()

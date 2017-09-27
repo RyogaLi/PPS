@@ -1,45 +1,6 @@
 from __future__ import division
 from conf import *
 
-def remove_empty_files(directory):
-	pass
-
-def plot_heat_map(fasta, output_dir, filename):
-	"""
-	create heat map 
-	:param output_dir: 
-	:return: 
-	"""
-	heat_map_matrix = []
-	# list of all the sequence output files
-	file_names = os.listdir(output_dir)
-	# list all the genes we target
-	all_gene = []
-	with open(fasta,"r") as fa:
-		for line in fa:
-			if ">" in line:
-				all_gene.append(line.strip().split(">")[-1])
-
-	for file in file_names:
-		# open gene count/read depth file
-		print output_dir+file+"/"+filename
-		if not os.path.exists(output_dir+file+"/"+filename):
-			print("file does not exist")
-			continue
-
-		with open(output_dir+file+"/"+filename, "r") as input_file:
-			entry = [0] * len(all_gene)
-			for line in input_file:
-				if "gene" in line or "*" in line: continue
-				line = line.strip().split("\t")
-				gene_index = all_gene.index(line[0])
-				entry[gene_index] = int(line[1])
-			# entry.insert(0, file)
-		heat_map_matrix.append(entry)
-	data = np.asarray(heat_map_matrix)
-	np.savetxt("gene_count_total.csv", data.T, delimiter=",")
-
-
 def plot_readdepth_genecount(output_dir):
 	dirnames = os.listdir(output_dir)
 	for dir in dirnames:
@@ -91,32 +52,6 @@ def plot_recover_rate(output_dir):
 	plt.ylabel("% covered")
 	plt.savefig("percent_recovered.png")
 
-def plot_top_n(snp, indel, avg_rd, n):
-	"""
-	plot top n genes 
-	:param snp: 
-	:param indel: 
-	:param avg_rd: 
-	:return: 
-	"""
-	top_n = sorted(avg_rd, key=avg_rd.get, reverse=True)[:n]
-	s = []
-	i = []
-	rd = []
-	for key in top_n:
-		# s.append(snp[key])
-		# i.append(indel[key])
-		rd.append(avg_rd[key])
-	# plt.plot(n, s, ".")
-	# plt.plot(n, i, ".")
-	plt.plot(range(n), rd, "o")
-	plt.title("Top genes analysis")
-	plt.ylim([0,1000])
-	# plt.xlim([0,n+2])
-	plt.xlabel("Gene names")
-	plt.xticks(range(n), top_n)
-	plt.savefig("top_genes.png")
-	plt.close()
 
 def plot_recover(f):
 	"""
@@ -153,6 +88,7 @@ def plot_recover(f):
 	plt.xlabel("percent aligned")
 	plt.ylabel("percent recovered")
 	plt.savefig("./aligned_recovered_plot.png")
+
 
 
 if __name__ == "__main__":
