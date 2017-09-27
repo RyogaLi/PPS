@@ -25,10 +25,15 @@
     ```
     
 1. Please goto `./src/conf.py` to change all the required input parameters
-2. 
+2. Run 
+
+```bash
+python ./src/main.py
+```
 
 ## Output
-
+1. All the intermediate files will be saved into your output directory
+2. A summary file in `.csv` format will be created
 
 ## Test Data
 
