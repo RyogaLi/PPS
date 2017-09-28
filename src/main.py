@@ -8,6 +8,17 @@ import logging.config
 
 
 def write_full_cover(plate_name, all_genes, full_cover_genes, snp, indel, ref_dict, output_file):
+	"""
+	
+	:param plate_name: str
+	:param all_genes: dictionary 
+	:param full_cover_genes: 
+	:param snp: 
+	:param indel: 
+	:param ref_dict: 
+	:param output_file: 
+	:return: 
+	"""
 	with open(output_file, "a") as output_file:
 		output_file.write("plate_name,gene_name,gene_length,aligned_length,alignment_rate,total_read_count,average_read_depth,number_of_SNP,number_of_INDEL\n")
 		for gene in all_genes.keys():
@@ -68,7 +79,6 @@ def main():
 	# analysis
 	# after variant calling
 	# filter vcf file and get fully aligned genes with their avg read depth
-	# go thru all output directory
 	dir_list = os.listdir(output)
 	for dir in dir_list:
 		if not os.path.isdir(output + "/" + dir): continue

@@ -1,28 +1,6 @@
 from __future__ import division
 from conf import *
 
-def plot_readdepth_genecount(output_dir):
-	dirnames = os.listdir(output_dir)
-	for dir in dirnames:
-		rd = []
-		gc = []
-		if not os.path.exists(output_dir+dir+"/read_depth.txt"): continue
-		os.chdir(output_dir+dir)
-		read_depth = np.loadtxt("./read_depth.txt", dtype="str")
-		gene_count = np.loadtxt("./gene_count.txt", dtype="str")
-		for i in read_depth:
-			find = gene_count[np.where(gene_count[:, 0] == i[0])]
-			if len(find) != 0 and "gene_name" not in find and float(find[0][1]) < 500:
-				rd.append(float(i[1]))
-				gc.append(float(find[0][1]))
-		corr = pearsonr(rd, gc)[0]
-		print corr
-		plt.plot(rd, gc, ".", label='The red data')
-		plt.xlabel("read depth")
-		plt.ylabel("gene count")
-		plt.savefig("read_depth_vs_gene_count.png")
-		plt.close()
-
 def plot_recover_rate(output_dir):
 	dirnames = os.listdir(output_dir)
 	ref_dict = {}
@@ -88,7 +66,6 @@ def plot_recover(f):
 	plt.xlabel("percent aligned")
 	plt.ylabel("percent recovered")
 	plt.savefig("./aligned_recovered_plot.png")
-
 
 
 if __name__ == "__main__":
