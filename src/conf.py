@@ -5,6 +5,7 @@ import os
 import vcf
 import re
 import subprocess
+import pandas as pd
 import plotly.plotly as py
 import plotly.graph_objs as go
 import seaborn as sns

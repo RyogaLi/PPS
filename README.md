@@ -35,5 +35,7 @@
 1. All the intermediate files will be saved into your output directory
 2. A summary file in `.csv` format will be created
 
+## Additional Analysis (for yeast PPS data)
+
 ## Notes 
 * Please goto [wiki page](https://github.com/RyogaLi/PPS/wiki) for more information

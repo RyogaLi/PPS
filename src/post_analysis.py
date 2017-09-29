@@ -1,22 +1,23 @@
 from conf import *
 
-def count_gene(summary, col):
+def count_gene(summary, plate_col_name, gene_col_name):
 	"""
 	for each plate in summary, count all the genes
 	:param summary: summary file
 	:param col: column that contains gene name
 	:return: 
 	"""
+
+	df = pd.read_csv(summary)
+	df.dropna(axis=1)
+
+	plate_names = set(df[plate_col_name])
+
 	all_plates = {}
-	with open(summary, "r") as total:
-		for line in total:
-			if "plate" in line: continue
-			line = line.split(",")
-			plate_name = line[0]
-			if plate_name not in all_plates.keys():
-				all_plates[plate_name] = [line[col]]
-			else:
-				all_plates[plate_name].append(line[col])
+	for i in plate_names:
+		genes = list(df.loc[df[plate_col_name] == i][gene_col_name])
+		clean_genes = [x for x in genes if str(x) != 'nan']
+		all_plates[i] = clean_genes
 	return all_plates
 
 
@@ -56,21 +57,28 @@ def reads_count(fastq_file_list):
 	return rc
 
 if __name__ == '__main__':
-	ref_summary_hip = ""
-	ref_summary_sup = ""
-	summary = ""
 
-	hip_genes = count_gene(ref_summary_hip,0)
-	sup_genes = count_gene(ref_summary_sup,0)
-	found_genes = count_gene(summary,0)
+	ref_summary_hip = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/csv/hip_plates.csv"
+	ref_summary_sup = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/csv/sup_plates.csv"
 
-	# concatenate hip and sup
-	concatenate = {}
-	# find overlap
-	overlap_dict = find_overlap(concatenate, found_genes)
+	hip_genes = count_gene(ref_summary_hip,"384-Pool Name","ORF_NAME_NODASH")
+	sup_genes = count_gene(ref_summary_sup, "Condensed plate","orf_name")
 
-	fastq_files = ""
-
-	all_reads = reads_count(fastq_files)
+	# print hip_genes
+	# ref_summary_sup = ""
+	# summary = ""
+	#
+	# hip_genes = count_gene(ref_summary_hip,0)
+	# sup_genes = count_gene(ref_summary_sup,0)
+	# found_genes = count_gene(summary,0)
+	#
+	# # concatenate hip and sup
+	# concatenate = {}
+	# # find overlap
+	# overlap_dict = find_overlap(concatenate, found_genes)
+	#
+	# fastq_files = ""
+	#
+	# all_reads = reads_count(fastq_files)
 
 	# plot from (overlap and reads count)
