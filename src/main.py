@@ -66,7 +66,7 @@ def main():
 	# if user want the sequnece file to be aligned first
 	# if only want to call variants with existing reference and bam file, please set the variable to False in conf.py
 	if ALIGN:
-		alignment_obj = Alignment(all_reference, subset_reference, fastq_path, ALIGNMENT_SETTING)
+		alignment_obj = Alignment(all_reference, fastq_path, ALIGNMENT_SETTING)
 		alignment_obj._main()
 
 	# step 3

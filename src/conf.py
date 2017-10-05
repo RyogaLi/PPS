@@ -24,11 +24,9 @@ fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/combined_fastq/"
 # fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/other/"
 
 # path to reference files
-all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/subset_ref/ORF_combined_ref"
-ref_fasta = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/subset_ref/ORF_combined_ref.fasta"
-# all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/hip_ref/ORF_hip"
-# all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/other_ref/ORF_other"
-subset_reference = ""
+all_reference = "./ref/ORF_combined_ref"
+
+ref_fasta = "./ref/ORF_combined_ref.fasta"
 
 # path to output directory the last`/` is required!!!
 output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_fastq_subset_ref_ambiguous/"
@@ -41,6 +39,9 @@ file_name_pattern = "scORFeome-HIP-[0-9]+_S[0-9]+_L[0-9]+_"
 
 # if the fastq files are paired
 PAIRED = False
+
+# if you want to merge r1 and r2
+MERGE = True
 
 # setting for alignment
 ALIGNMENT_SETTING = "SENSITIVE"
@@ -57,5 +58,3 @@ VARIANT_CALL = False
 # If you want to remove all the synomuous SNPs
 # set this to True
 remove_syn = True
-
-

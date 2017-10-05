@@ -1,15 +1,19 @@
 from conf import *
+from sge import *
 import os
 import sys
 import logging.config
 import shutil
 
+# todo change all the fastq path to fastq file as it is for one file
+# todo r1 and r2 should be separated in sge file
+
 class Alignment(object):
 
-	def __init__(self, all_reference, subset_reference,fastq_path, setting):
+	def __init__(self, all_reference, fastq_file, setting):
 		self._reference = all_reference
-		self._sub_reference = subset_reference
-		self._fastq_path = fastq_path
+		# self._sub_reference = subset_reference
+		self._fastq_file= fastq_file
 		self._setting = setting
 
 	def _align(self, r1, r2=None):
@@ -46,21 +50,6 @@ class Alignment(object):
 
 		return command
 
-	def _gene_count(self):
-		gene_count = {}
-		with open(self._basename+".sam", "r") as sam_file:
-			for line in sam_file:
-				if "@" in line: continue
-				line = line.split("\t")
-				if line[2] in gene_count.keys():
-					gene_count[line[2]] += 1
-				else:
-					gene_count[line[2]] = 1
-		with open("gene_count.txt", "w") as output:
-			output.write("gene_name\tgene_count\n")
-			for key in gene_count.keys():
-				output.write(key+"\t"+str(gene_count[key])+"\n")
-
 	def _main(self):
 
 		# init logging
@@ -92,20 +81,18 @@ class Alignment(object):
 				logger.info("alignment finished for %s and %s", os.path.basename(r1), os.path.basename(r2))
 				# self._gene_count()
 		else: # if it's not paired, align R1 and R2 separately
-			for file in os.listdir(fastq_path):
-				if file.endswith(".fastq"):
-					logger.info("started aligning %s ", os.path.basename(file))
-					command = self._align(fastq_path + file)
-					logger.info(command)
-					logger.info("alignment finished for %s ", os.path.basename(file))
-
-
+			# for file in os.listdir(fastq_path):
+			if self._fastq_file.endswith(".fastq"):
+				logger.info("started aligning %s ", os.path.basename(self._fastq_file))
+				command = self._align(fastq_path + self._fastq_file)
+				logger.info(command)
+				logger.info("alignment finished for %s ", os.path.basename(self._fastq_file))
 
 if __name__ == "__main__":
 	# get all the names of fastq file
 # 	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
 # 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
-	alignment_obj = Alignment(all_reference,subset_reference, fastq_path, ALIGNMENT_SETTING)
+	alignment_obj = Alignment(all_reference,fastq_path, ALIGNMENT_SETTING)
 	alignment_obj._main()
 	# alignment_obj._gene_count()
 

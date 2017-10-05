@@ -31,6 +31,7 @@ def count_gene(summary, plate_col_name, gene_col_name, snp_col=None, indel_col=N
 		all_plates[i] = clean_genes
 	return all_plates
 
+
 def normalize_keys(dictionary, regex):
 	"""
 	select string in regex and replace keys with a match
@@ -49,6 +50,7 @@ def normalize_keys(dictionary, regex):
 			pass
 		dictionary[result] = dictionary.pop(key)
 	return dictionary
+
 
 def find_overlap(d1_ref, d2):
 	"""
