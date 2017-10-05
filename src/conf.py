@@ -31,7 +31,7 @@ ref_fasta = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/subset_
 subset_reference = ""
 
 # path to output directory the last`/` is required!!!
-output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_fastq_subset_ref/"
+output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_fastq_subset_ref_ambiguous/"
 
 # pattern in file name that can be used to identify R1 and R2
 file_name_pattern = "scORFeome-HIP-[0-9]+_S[0-9]+_L[0-9]+_"

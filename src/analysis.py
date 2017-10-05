@@ -66,7 +66,8 @@ def filter_vcf(file, gene_names):
 						indel_count[line[0]] += 1
 					else:
 						indel_count[line[0]] = 1
-				elif "<*>" not in line[4]: # SNP
+				# elif "<*>" not in line[4]: # SNP
+				elif line[4] != "<*>":
 					# for each SNP, find out position and ALT
 					if line[0] in snp_count.keys():
 						snp_count[line[0]].append((int(line[1]),line[4][0]))
@@ -90,20 +91,22 @@ def remove_synonymous(snp_dict, dna_seq):
 		dna = dna_seq[protein]
 		# print dna
 		altered_dna = list(dna)
+		# print altered_dna
+
 		# alter all the bp in original dna seq
 		for pos in snp_dict[protein]:
 			# print pos
 			altered_dna[pos[0]-1] = pos[1]
 		altered_dna = "".join(altered_dna)
-
 		dna = Seq(dna, generic_dna)
-		ref_protein = dna.translate(to_stop=True)
+		ref_protein = dna.translate()
 
 		altered_dna = Seq(altered_dna, generic_dna)
-		altered_protein = altered_dna.translate(to_stop=True)
+		altered_protein = altered_dna.translate()
 
 		non_syn = []
 		# find position that are different
+
 		for i in range(len(altered_protein)):
 			if altered_protein[i] != ref_protein[i]:
 				dna_range=range(i,(i+1)*3)
