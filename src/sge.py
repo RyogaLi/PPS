@@ -7,15 +7,6 @@ class Sge(object):
 		self._max_queue = max_queue
 		self._sge_log = sge_log
 
-	def _submit(self):
-		"""
-		submit all the files in input_dir
-		"""
-		for file in self._input_dir:
-			fastq_file = file
-			cmd = "qsub -V -l mem=16G -cwd main.py -o " + self._sge_log
-			os.system(cmd)
-
 	def _monitor(self):
 		"""
 		monitor all the jobs in the queue

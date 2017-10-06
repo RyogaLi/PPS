@@ -25,11 +25,17 @@
     ```
     
 1. Please goto `./src/conf.py` to change all the required input parameters
-2. Run 
+2. Run on single or 1 pair of fastq file
 
     ```bash
     python ./src/main.py
     ```
+3. Run on bunch of fastq files (on SGE)
+
+    ```bash
+    python ./src/submit.py -dir path_to_fastq_files
+    ```
+
 
 ## Output
 1. All the intermediate files will be saved into your output directory

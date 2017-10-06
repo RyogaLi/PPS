@@ -5,9 +5,6 @@ import sys
 import logging.config
 import shutil
 
-# todo change all the fastq path to fastq file as it is for one file
-# todo r1 and r2 should be separated in sge file
-
 class Alignment(object):
 
 	def __init__(self, all_reference, fastq_file, setting):
@@ -56,43 +53,19 @@ class Alignment(object):
 		logging.config.fileConfig("./src/logging.conf")
 		logger = logging.getLogger("alignment")
 		# create log directory
-
 		# IF IT'S PAIRED (PAIRED == TRUE)
 		# get corresponding R1 and R2 files
 		if PAIRED == True:
 			# fastq files list
-			r1_files = []
-			r2_files = []
-			for file in os.listdir(fastq_path):
-				if file.endswith(".fastq"):
-					# fetch R1 in file name and add to r1
-					if "R1" in file:
-						r1_files.append(file)
-					elif "R2" in file:
-						r2_files.append(file)
-
-			for r1 in r1_files:
-				# find corresponding r2
-				identifier = os.path.basename(r1).split("R1")[0]
-				r2 = [i for i in r2_files if identifier in i][0]
-				logger.info("started aligning %s and %s", os.path.basename(r1), os.path.basename(r2))
-				command = self._align(fastq_path+r1, fastq_path+r2)
-				logger.info(command)
-				logger.info("alignment finished for %s and %s", os.path.basename(r1), os.path.basename(r2))
-				# self._gene_count()
+			self._align(r1, r2)
 		else: # if it's not paired, align R1 and R2 separately
-			# for file in os.listdir(fastq_path):
-			if self._fastq_file.endswith(".fastq"):
-				logger.info("started aligning %s ", os.path.basename(self._fastq_file))
-				command = self._align(fastq_path + self._fastq_file)
-				logger.info(command)
-				logger.info("alignment finished for %s ", os.path.basename(self._fastq_file))
+			self._align(self._fastq_file)
 
 if __name__ == "__main__":
 	# get all the names of fastq file
 # 	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
 # 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
-	alignment_obj = Alignment(all_reference,fastq_path, ALIGNMENT_SETTING)
+	alignment_obj = Alignment(all_reference,fastq, ALIGNMENT_SETTING)
 	alignment_obj._main()
 	# alignment_obj._gene_count()
 

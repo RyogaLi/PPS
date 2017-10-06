@@ -1,4 +1,5 @@
-./ref/*
+./references/*
+./PPS_output/*
 *.txt
 *.pyc
 *.log

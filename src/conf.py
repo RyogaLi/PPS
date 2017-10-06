@@ -19,9 +19,9 @@ from Bio.Alphabet import generic_dna
 ######### FILE PARHs ##########
 
 # path to the folder that contains fastq files
-fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/combined_fastq/"
-# fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/hip/"
-# fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/other/"
+fastq =  "fastq_file"
+r1 = None
+r2 = None
 
 # path to reference files
 all_reference = "./ref/ORF_combined_ref"
