@@ -58,3 +58,7 @@ VARIANT_CALL = False
 # If you want to remove all the synomuous SNPs
 # set this to True
 remove_syn = True
+
+######### Runninng on SGE ##########
+max_queue = 0
+

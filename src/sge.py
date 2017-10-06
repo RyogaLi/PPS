@@ -26,3 +26,6 @@ class Sge(object):
 		cmd = "qstat"
 		stat = os.popen(cmd)
 		output = stat.read()
+		if output == "":
+			self._submit()
+
