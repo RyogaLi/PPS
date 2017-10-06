@@ -14,7 +14,7 @@ if __name__ == '__main__':
 	# here we run one file each time (no slave)
 	list_files = os.listdir(input_dir)
 
-	if src.conf.PAIRED == True:
+	if conf.PAIRED == True:
 		r1_files = []
 		r2_files = []
 		for file in list_files:
@@ -30,20 +30,21 @@ if __name__ == '__main__':
 				identifier = os.path.basename(r1).split("R1")[0]
 				r2 = [i for i in r2_files if identifier in i][0]
 				conf.r1 = r1
-				xwconf.r2 = r2
-				cmd = "qsub submission.sh"
+				conf.r2 = r2
+				# todo specify output dir and output log and error log
+				cmd = "qsub -N " + identifier + " submission.sh 1> "+output
 				os.system(cmd)
 				track += 1
 			else:
-				# wait for all the jobs finish
+				# todo wait for all the jobs finish
 				track = 0
-
 	else:
 		track = 0
 		for file in list_files:
 			if track <= conf.max_queue:
 				conf.fastq = file
-				cmd = "qsub submission.sh"
+				# todo specify output dir and output log and error log
+				cmd = "qsub -N "+ file + " submission.sh"
 				os.system(cmd)
 
 
