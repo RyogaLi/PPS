@@ -9,16 +9,16 @@ def count_gene(summary, plate_col_name, gene_col_name, snp_col=None, indel_col=N
 	:return: 
 	"""
 
-	df = pd.read_csv(summary)
+	df = pd.read_csv(summary,error_bad_lines=False)
 	df.dropna(axis=1)
 
 	plate_names = set(df[plate_col_name])
-
+	# print len(plate_names)
 	all_plates = {}
 	for i in plate_names:
-
+		# print i
 		if (snp_col != None) and (alignment_rate != None): # select only the one with snp
-			df[alignment_rate] =df[alignment_rate].apply(pd.to_numeric, errors='coerce')
+			df[alignment_rate] = df[alignment_rate].apply(pd.to_numeric, errors='coerce')
 			genes = list(df.loc[(df[plate_col_name] == i) & (df[snp_col] == "0") & (df[indel_col] == "0") & (
 				df[alignment_rate] >= 0.9)][gene_col_name])
 		elif alignment_rate != None:
@@ -44,9 +44,10 @@ def normalize_keys(dictionary, regex):
 		try:
 			result = re.match(regex, up)
 			result = result.group(1)
-			result = result.replace("-","_")
+			if "_0" in result:
+				result = result.replace("_0","")
 		except Exception as e:
-			print(key)
+			# print(key)
 			pass
 		dictionary[result] = dictionary.pop(key)
 	return dictionary
@@ -61,10 +62,13 @@ def find_overlap(d1_ref, d2):
 	"""
 	summary = {}
 	for key in d1_ref.keys():
-		ref_genes = set(d1_ref[key])
-		genes = set(d2[key])
+		ref_genes = set(map(int, d1_ref[key]))
+		genes = set(map(int, d2[key]))
+		print ref_genes
+		print genes
 		# number of genes we got
 		recovered_genes = len(list(ref_genes&genes))
+		print list(ref_genes&genes)
 		# number of all the genes
 		all_genes = len(ref_genes)
 
@@ -79,24 +83,23 @@ def reads_count(fastq_file_list):
 	:return: 
 	"""
 	rc = {}
-	with open(fastq_file_list, "r") as fq:
-		for line in fq:
-			line = line.strip()
-			cmd = "cat "+line+" | "+ "wc"+" -l"
-			temp = int(os.popen(cmd).read())/4
-			plate_name = line.split("/")[-1].split("_")[0]
-			if "Sup" in plate_name:
-				plate_name = plate_name.split("-")[1]
-			rc[plate_name] = temp
+
+	for file in os.listdir(fastq_file_list):
+		line = os.path.join(fastq, file)
+		cmd = "cat "+line+" | "+ "wc"+" -l"
+		temp = int(os.popen(cmd).read())/4
+		plate_name = line.split("/")[-1].split("_")[0]
+		if "Sup" in plate_name:
+			plate_name = plate_name.split("-")[1]
+		rc[plate_name] = temp
 	return rc
 
-if __name__ == '__main__':
-
+def yeast_pps_main():
 	ref_summary_hip = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/csv/hip_plates.csv"
 	ref_summary_sup = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/csv/sup_plates.csv"
 
-	hip_genes = count_gene(ref_summary_hip,"384-Pool Name","ORF_NAME_NODASH")
-	sup_genes = count_gene(ref_summary_sup, "Condensed plate","orf_name")
+	hip_genes = count_gene(ref_summary_hip, "384-Pool Name", "ORF_NAME_NODASH")
+	sup_genes = count_gene(ref_summary_sup, "Condensed plate", "orf_name")
 
 	# merge 2 dict into one
 	hip_genes.update(sup_genes)
@@ -104,10 +107,10 @@ if __name__ == '__main__':
 	# get gene summary from pps summary
 	pps_summary = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/csv/20170927_filtered_synonymous_summary.csv"
 	# with_ambiguous = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/csv/filtered_synonymous_summary.csv"
-	pps_genes_removed_snp = count_gene(pps_summary, "plate_name", "gene_name", "number_of_SNP", "number_of_INDEL", "alignment_rate")
+	pps_genes_removed_snp = count_gene(pps_summary, "plate_name", "gene_name", "number_of_SNP", "number_of_INDEL",
+									   "alignment_rate")
 	pps_genes_align = count_gene(pps_summary, "plate_name", "gene_name", alignment_rate="alignment_rate")
 	pps_genes = count_gene(pps_summary, "plate_name", "gene_name")
-
 
 	# print hip_genes.keys()
 	# normalize the keys (plate names)
@@ -123,7 +126,7 @@ if __name__ == '__main__':
 	# plate_names = overlap_dict.keys()
 	percent_recovered = []
 	for key in overlap_dict:
-		percent_recovered.append((key,overlap_dict[key][0]/overlap_dict[key][1]))
+		percent_recovered.append((key, overlap_dict[key][0] / overlap_dict[key][1]))
 	percent_recovered = dict(percent_recovered)
 
 	# find overlap (without snp)
@@ -134,7 +137,6 @@ if __name__ == '__main__':
 	for key in overlap_dict:
 		percent_recovered_no_snp.append((key, overlap_dict[key][0] / overlap_dict[key][1]))
 	percent_recovered_no_snp = dict(percent_recovered_no_snp)
-
 
 	# find overlap (without snp)
 	overlap_dict = find_overlap(hip_genes, pps_genes_align)
@@ -180,15 +182,67 @@ if __name__ == '__main__':
 
 	print sorted_values_no_mut
 	print sorted_values_align == sorted_values
+
 	plt.figure(figsize=(15, 7.5))
-	plt.plot(range(len(sorted_plates)), sorted_values, ".",ms=14, label="with no filter applied")
-	plt.plot(range(len(sorted_plates)), sorted_values_no_mut, ".", ms=14,label="with all filter applied")
+	plt.plot(range(len(sorted_plates)), sorted_values, ".", ms=14, label="with no filter applied")
+	plt.plot(range(len(sorted_plates)), sorted_values_no_mut, ".", ms=14, label="with all filter applied")
 	plt.plot(range(len(sorted_plates)), sorted_values_align, ".", ms=14, label="alignment rate >= 90%")
 	plt.legend(loc=4)
-	plt.ylim((0,1))
-	plt.xlim((0,23))
-	plt.xlabel("plates",fontsize=14)
-	plt.ylabel("percentage of genes recovered",fontsize=16)
-	plt.xticks(range(len(sorted_plates)), sorted_plates, rotation = 20)
+	plt.ylim((0, 1))
+	plt.xlim((0, 23))
+	plt.xlabel("plates", fontsize=14)
+	plt.ylabel("percentage of genes recovered", fontsize=16)
+	plt.xticks(range(len(sorted_plates)), sorted_plates, rotation=20)
 	plt.savefig("compare_mutations.png")
 	plt.close()
+
+def huri_pps_main():
+	huri_ref = "/Users/roujia/Documents/02_dev/01_KiloSEQ/PASS_3/20171011_bhORFeome_P3_entry_withseqs.csv"
+	huri_summary = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_missing_orffiltered_synonymous_summary.csv"
+	pps_fastq = "/Users/roujia/Documents/01_ngsdata/20171005_Pass3_PPS/combined/"
+
+	ref_genes = count_gene(huri_ref, "384_plate_name", "orf_id")
+	pps_genes = count_gene(huri_summary, "plate_name", "gene_name")
+
+
+	# normalize keys
+	regex = ".+((AD|DB|both)(_?0?[0-9]?)).?"
+	ref_genes = normalize_keys(ref_genes, regex)
+	pps_genes = normalize_keys(pps_genes, regex)
+
+	overlap_dict = find_overlap(ref_genes, pps_genes)
+
+	percent_recovered = []
+	for key in overlap_dict:
+		percent_recovered.append((key, overlap_dict[key][0] / overlap_dict[key][1]))
+	percent_recovered = dict(percent_recovered)
+	print percent_recovered
+
+	# read count
+	all_reads = reads_count(fastq)
+	# print all_reads.keys()
+	#normalize keys
+	all_reads = normalize_keys(all_reads, regex)
+
+	# percentage of genes recovered
+	x_keys =  sorted(all_reads, key=all_reads.get)
+	x = []
+	y = []
+	for key in x_keys:
+		x.append(percent_recovered[key])
+		# print all_reads[key]
+		y.append(all_reads[key])
+		# labels.append(key.split("-")[-1])
+	# plot from (overlap and reads count)
+	plt.plot(x, y, ".")
+	# plt.xticks(x, x_keys, rotation=0, fontsize=6)
+	plt.ylabel("Total number of reads")
+	plt.xlabel("Percentage of genes found")
+	plt.savefig("read_depth.png")
+	plt.close()
+
+
+if __name__ == '__main__':
+	# yeast_pps_main()
+	huri_pps_main()
+

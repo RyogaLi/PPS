@@ -55,35 +55,49 @@ def main():
 	# check fastq files
 	# log these information
 	# create a dir for each alignment
-	if os.path.exists("log"):
-		shutil.rmtree("log")
-	os.makedirs("log")
+
+	# create output folder
+	if not os.path.isdir(output):
+		os.mkdir(output)
+
 	logging.config.fileConfig("./src/logging.conf")
 	logger = logging.getLogger("main")
 
-	# step 2
-	# alignment
-	# if user want the sequnece file to be aligned first
-	# if only want to call variants with existing reference and bam file, please set the variable to False in conf.py
-	if ALIGN:
-		alignment_obj = Alignment(all_reference, fastq_path, ALIGNMENT_SETTING)
-		alignment_obj._main()
+	file_list = os.listdir(fastq)
 
-	# step 3
-	# variant call
+	for file in file_list:
+		file = os.path.join(fastq, file)
+		if file.endswith(".fastq"):
+			# step 2
+			# alignment
+			# if user want the sequnece file to be aligned first
+			# if only want to call variants with existing reference and bam file, please set the variable to False in conf.py
+			if ALIGN:
+				alignment_obj = Alignment(all_reference, file, ALIGNMENT_SETTING)
+				alignment_obj._main()
+
 	if VARIANT_CALL:
-		variant_caller = VariantCall(all_reference + ".fasta")
-		variant_caller._main()
+		dir_list = os.listdir(output)
+		for dir in dir_list:
+			if not os.path.isdir(os.path.join(output, dir)):
+				continue
+			os.chdir(os.path.join(output, dir))
+			for file in os.listdir("."):
+				# step 3
+				# variant call
+				if file.endswith("_sorted.bam"):
+					variant_caller = VariantCall(all_reference + ".fasta", file)
+					variant_caller._main()
 
-	# step 4
-	# analysis
-	# after variant calling
-	# filter vcf file and get fully aligned genes with their avg read depth
 	dir_list = os.listdir(output)
 	for dir in dir_list:
 		if not os.path.isdir(output + "/" + dir): continue
 		os.chdir(os.path.join(output,dir))
 		for file in os.listdir("."):
+			# step 4
+			# analysis
+			# after variant calling
+			# filter vcf file and get fully aligned genes with their avg read depth
 			if file.endswith(".log") and os.stat(file).st_size == 0:
 				os.remove(file)
 			if file.endswith(".raw.vcf"):

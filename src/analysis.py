@@ -67,7 +67,7 @@ def filter_vcf(file, gene_names):
 					else:
 						indel_count[line[0]] = 1
 				# elif "<*>" not in line[4]: # SNP
-				elif line[4] != "<*>":
+				elif "<*>" not in line[4]:
 					# for each SNP, find out position and ALT
 					if line[0] in snp_count.keys():
 						snp_count[line[0]].append((int(line[1]),line[4][0]))

@@ -41,11 +41,16 @@ if __name__ == '__main__':
 	else:
 		track = 0
 		for file in list_files:
-			if track <= conf.max_queue:
+			if track <= conf.max_queue and file.endswith(".fastq"):
 				conf.fastq = file
 				# todo specify output dir and output log and error log
+				time_stamp = strftime("%Y_%m_%d_%H_%M_%S", gmtime())
+				dir_name = file.split(".")[0] + "_" + time_stamp
+				output_dir = os.path.join(conf.output, dir_name)
+				os.mkdir(output_dir)
+
 				cmd = "qsub -N "+ file + " submission.sh"
-				os.system(cmd)
+				# os.system(cmd)
 
 
 

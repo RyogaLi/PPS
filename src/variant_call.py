@@ -1,9 +1,10 @@
 from conf import *
 
 class VariantCall(object):
-	def __init__(self, reference, setting="DEFAULT"):
+	def __init__(self, reference, bam_file, setting="DEFAULT"):
 		self._reference = reference
 		self._setting = setting
+		self._bam_file = bam_file
 
 	def _call_variants(self, bam):
 		self._basename = os.path.basename(bam).split(".")[0]
@@ -19,16 +20,8 @@ class VariantCall(object):
 		return self._raw_vcf
 
 	def _main(self):
-		# goto each folder in output dir
-		# run this inside the dir
-		dir_list = os.listdir(output)
-		for dir in dir_list:
-			if not os.path.isdir(output+"/"+dir): continue
-			os.chdir(output+dir)
-			for file in os.listdir("."):
-				if "_sorted.bam" in file:
-					# call variant
-					self._call_variants(file)
+
+		self._call_variants(self._bam_file)
 
 # if __name__ == "__main__":
 # 	variant_caller = VariantCall(all_reference+".fasta")

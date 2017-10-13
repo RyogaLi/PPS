@@ -1,5 +1,4 @@
 # some supplimentary functions
-# todo remove smorf in ref and align
 from conf import *
 
 def combine_fastq(f1, f2):
@@ -34,6 +33,19 @@ def combine_fastq(f1, f2):
 					new.write(line)
 
 
+def read_from_csv(csv, seq_name, seq):
+	"""
+	read from a csv file and generate fasta reference file
+	:param csv: 
+	:return: 
+	"""
+	csv_file = pd.read_csv(csv)
+	df = csv_file[[seq_name, seq]]
+	with open("missing_orf.fasta", "w") as fasta:
+		for index, row in df.iterrows():
+			fasta.write(">"+str(row[seq_name])+"\n"+str(row[seq])+"\n")
+
+
 def get_dna_ref(fasta):
 	"""
 	based on the DNA sequence in fasta file, generate a dictionary contains {ORF_id:protein_seq}
@@ -58,10 +70,16 @@ def get_dna_ref(fasta):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Supplementary functions')
-	parser.add_argument('combine',nargs="?",type=str, help='Combine R1 and R2')
+	parser.add_argument('-combine_fastq', type=str, help='path to fastq files', required=False)
 	args = parser.parse_args()
 
-	if args.combine:
+	fastq_path = args.combine_fastq
+	# print fastq_path
+
+	# read_from_csv("/Users/roujia/Documents/02_dev/01_KiloSEQ/PASS_3/20171011_bhORFeome_P3_entry_withseqs.csv", "orf_id", "sequences")
+
+	# print fastq_path
+	if fastq_path != "":
 		# fastq files list
 		r1_files = []
 		r2_files = []

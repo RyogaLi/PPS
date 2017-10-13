@@ -16,10 +16,11 @@ class Alignment(object):
 	def _align(self, r1, r2=None):
 		self._basename = os.path.basename(r1).split(".")[0]
 		# create a dir for each alignment
-		if os.path.exists(output+self._basename):
-			shutil.rmtree(output+self._basename)
-		os.makedirs(output+self._basename)
-		os.chdir(output+self._basename)
+		output_path = os.path.join(output, self._basename)
+		if os.path.exists(output_path):
+			shutil.rmtree(output_path)
+		os.makedirs(output_path)
+		os.chdir(output_path)
 
 		if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
 			if r2 != None: # it's paired
@@ -49,9 +50,9 @@ class Alignment(object):
 
 	def _main(self):
 
-		# init logging
-		logging.config.fileConfig("./src/logging.conf")
-		logger = logging.getLogger("alignment")
+		# # init logging
+		# logging.config.fileConfig("./src/logging.conf")
+		# logger = logging.getLogger("alignment")
 		# create log directory
 		# IF IT'S PAIRED (PAIRED == TRUE)
 		# get corresponding R1 and R2 files
@@ -61,11 +62,11 @@ class Alignment(object):
 		else: # if it's not paired, align R1 and R2 separately
 			self._align(self._fastq_file)
 
-if __name__ == "__main__":
-	# get all the names of fastq file
-# 	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
-# 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
-	alignment_obj = Alignment(all_reference,fastq, ALIGNMENT_SETTING)
-	alignment_obj._main()
+# if __name__ == "__main__":
+# 	# get all the names of fastq file
+# # 	fastq_path = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_DK/"
+# # 	reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ref/ORF_reference_pDONOR"
+# 	alignment_obj = Alignment(all_reference,fastq, ALIGNMENT_SETTING)
+# 	alignment_obj._main()
 	# alignment_obj._gene_count()
 

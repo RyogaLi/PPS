@@ -12,6 +12,7 @@ import seaborn as sns
 import numpy as np
 import argparse
 import matplotlib.patches as mpatches
+from time import gmtime, strftime
 from scipy.stats.stats import pearsonr
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
@@ -19,20 +20,20 @@ from Bio.Alphabet import generic_dna
 ######### FILE PARHs ##########
 
 # path to the folder that contains fastq files
-fastq =  "fastq_file"
+fastq =  "/Users/roujia/Documents/01_ngsdata/20171005_Pass3_PPS/combined/"
 r1 = None
 r2 = None
 
 # path to reference files
-all_reference = "./ref/ORF_combined_ref"
+all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/fasta/missing_orf/missing_orf"
 
-ref_fasta = "./ref/ORF_combined_ref.fasta"
+ref_fasta = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/fasta/missing_orf/missing_orf.fasta"
 
 # path to output directory the last`/` is required!!!
-output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_combined_fastq_subset_ref_ambiguous/"
+output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_missing_orf"
 
 # pattern in file name that can be used to identify R1 and R2
-file_name_pattern = "scORFeome-HIP-[0-9]+_S[0-9]+_L[0-9]+_"
+# file_name_pattern = "scORFeome-HIP-[0-9]+_S[0 -9]+_L[0-9]+_"
 
 
 ######### VARIABLES ##########
