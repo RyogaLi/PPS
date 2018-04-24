@@ -12,7 +12,7 @@ def get_full_cover(file):
 		for line in raw:
 			id_line = re.search("<ID=(.+?),length=(.+?)>", line)
 			if id_line:
-				ref_dict[id_line.group(1)] = int(id_line.group(2))
+				ref_dict[id_line.group(1)] = int(id_line.group(2)) # assign gene length to geneID
 			if "#" not in line:
 				line = line.split()
 				# print line[7]
@@ -68,13 +68,16 @@ def filter_vcf(file, gene_names):
 						indel_count[line[0]] = 1
 				# elif "<*>" not in line[4]: # SNP
 				elif "<*>" not in line[4]:
+
 					# for each SNP, find out position and ALT
 					if line[0] in snp_count.keys():
 						snp_count[line[0]].append((int(line[1]),line[4][0]))
 					else:
 						snp_count[line[0]] = [(int(line[1]),line[4][0])]
 				# write record to file
+
 				filtered.write("\t".join(line)+"\n")
+	# print len(snp_count["70364"])
 	return snp_count, indel_count, read_depth
 
 def remove_synonymous(snp_dict, dna_seq):
@@ -89,36 +92,41 @@ def remove_synonymous(snp_dict, dna_seq):
 		# get dna seq from dna_seq
 		# print snp_dict[protein]
 		dna = dna_seq[protein]
+		# print protein
+		# print dna
 		# print dna
 		altered_dna = list(dna)
 		# print altered_dna
 
 		# alter all the bp in original dna seq
 		for pos in snp_dict[protein]:
-			# print pos
 			altered_dna[pos[0]-1] = pos[1]
 		altered_dna = "".join(altered_dna)
 		dna = Seq(dna, generic_dna)
 		ref_protein = dna.translate()
-
+		# print ref_protein
 		altered_dna = Seq(altered_dna, generic_dna)
 		altered_protein = altered_dna.translate()
-
+		# print altered_protein
 		non_syn = []
 		# find position that are different
 
 		for i in range(len(altered_protein)):
 			if altered_protein[i] != ref_protein[i]:
-				dna_range=range(i,(i+1)*3)
+				if i == 0:
+					dna_range=range(i,(i+1)*3)
+				else:
+					dna_range = range(i*3, (i+1)*3)
 				snp = dict(snp_dict[protein])
-				# print snp
+				# print "test"+str(len(snp.keys()))
 				# for all the snp in that range, add them to non-syn
 				for pos in dna_range:
 					try:
+						# print (pos, snp[pos])
 						non_syn.append((pos, snp[pos]))
 					except Exception as e:
 						# print("exc")
 						pass
 		non_syn_dict[protein] = non_syn
-
+	# print len(non_syn_dict["70364"])
 	return non_syn_dict

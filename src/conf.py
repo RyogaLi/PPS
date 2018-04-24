@@ -17,10 +17,10 @@ from scipy.stats.stats import pearsonr
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 
-######### FILE PARHs ##########
+######### FILE PATHs ##########
 
 # path to the folder that contains fastq files
-fastq =  "/Users/roujia/Documents/01_ngsdata/20171005_Pass3_PPS/combined/"
+fastq =  "/Users/roujia/Desktop/20171219_PPS/"
 r1 = None
 r2 = None
 
@@ -30,19 +30,18 @@ all_reference = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/fas
 ref_fasta = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/fasta/missing_orf/missing_orf.fasta"
 
 # path to output directory the last`/` is required!!!
-output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/output_missing_orf"
+output = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/P3_PPS_output/"
 
 # pattern in file name that can be used to identify R1 and R2
 # file_name_pattern = "scORFeome-HIP-[0-9]+_S[0 -9]+_L[0-9]+_"
 
-
 ######### VARIABLES ##########
 
-# if the fastq files are paired
-PAIRED = False
-
-# if you want to merge r1 and r2
-MERGE = True
+# # if the fastq files are paired
+# PAIRED = False
+#
+# # if you want to merge r1 and r2
+# MERGE = True
 
 # setting for alignment
 ALIGNMENT_SETTING = "SENSITIVE"
@@ -50,16 +49,21 @@ ALIGNMENT_SETTING = "SENSITIVE"
 
 # If the sequence need to be aligned
 # change this variable to False to avoid alignment if the sequences are already aligned
-ALIGN = False
+ALIGN = True
 
 # If variant call is already done, you can set this to False
 # Then the program will only do analysis
-VARIANT_CALL = False
+VARIANT_CALL = True
 
 # If you want to remove all the synomuous SNPs
 # set this to True
 remove_syn = True
 
-######### Runninng on SGE ##########
-max_queue = 0
+
+# if you want to compare the variants with variants on Clinvar database
+# set this to True
+clinvar = True
+orf_id_convert = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/new_orf_id_convert.txt"
+clinvar_db = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/180213_clinvar_variant_summary.txt"
+
 

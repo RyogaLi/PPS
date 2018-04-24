@@ -241,8 +241,17 @@ def huri_pps_main():
 	plt.savefig("read_depth.png")
 	plt.close()
 
+def missing_clones_main():
+	missing_clones_ref = ""
+	PPS_summary = ""
+
+	ref_genes = ""
+	pps_genes = ""
+
+
+	pass
 
 if __name__ == '__main__':
 	# yeast_pps_main()
-	huri_pps_main()
-
+	# huri_pps_main()
+	missing_clones_main()
