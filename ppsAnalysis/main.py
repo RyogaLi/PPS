@@ -12,8 +12,8 @@ import pandas as pd
 import os
 import argparse
 
-import src.alignment
-import src.cluster
+import ppsAnalysis.alignment
+import ppsAnalysis.cluster
 import logging.config
 
 
@@ -67,7 +67,7 @@ def variants_main(arguments):
     if not os.path.isdir(output):
         os.mkdir(output)
 
-    logging.config.fileConfig("./src/logging.conf")
+    logging.config.fileConfig("./ppsAnalysis/logging.conf")
     main_logger = logging.getLogger("main")
 
     if arguments.align:
@@ -94,14 +94,14 @@ def variants_main(arguments):
                 # make sh file for submission in sub_output directory for alignment
                 # this is developped for GALEN cluster
                 sh_file = os.path.join(sub_output, f"{fastq_ID}.sh")
-                alignment_obj = src.alignment.Alignment(ref, fastq_ID, f, sub_output, sh_file, align_log)
+                alignment_obj = ppsAnalysis.alignment.Alignment(ref, fastq_ID, f, sub_output, sh_file, align_log)
                 # the main function writes to the sh file ans submit the file to cluster
                 # return job ID
                 job_id = alignment_obj._main(r1, r2)
                 all_alignment_jobs.append(job_id)
         # track all alignment jobs
         alignment_log = logging.getLogger("alignment.log")
-        jobs_finished = src.cluster.parse_jobs_galen(all_alignment_jobs, alignment_log)
+        jobs_finished = ppsAnalysis.cluster.parse_jobs_galen(all_alignment_jobs, alignment_log)
         if jobs_finished:
             main_logger.info("Alignment jobs all finished")
 

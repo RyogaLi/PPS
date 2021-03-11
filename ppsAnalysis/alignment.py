@@ -5,8 +5,6 @@ Alignment plasmid pool sequencing analysis
 """
 import os
 import subprocess
-import sys
-import logging.config
 import shutil
 
 class Alignment(object):

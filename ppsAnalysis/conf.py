@@ -63,7 +63,7 @@ remove_syn = True
 # if you want to compare the variants with variants on Clinvar database
 # set this to True
 clinvar = False
-orf_id_convert = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/src/orf9-1_convert_id.txt"
+orf_id_convert = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/ppsAnalysis/orf9-1_convert_id.txt"
 clinvar_db = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/03_PPS_dev/190718_variant_summary.txt"
 
 # if you want to compare the variants with variants in gNomad database

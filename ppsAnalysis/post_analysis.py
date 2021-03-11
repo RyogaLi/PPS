@@ -1,5 +1,6 @@
 from __future__ import division
 from conf import *
+import pandas as pd
 
 def count_gene(summary, plate_col_name, gene_col_name, snp_col=None, indel_col=None, alignment_rate=None):
     """
