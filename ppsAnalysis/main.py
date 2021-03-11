@@ -90,7 +90,7 @@ def variants_main(arguments):
                 # fastq_ID = r1.split("-")[-2]
                 ref = arguments.ref + "ORF_combined_ref"
             else:
-                raise ValueError("Please provide valie mode: human or yeast")
+                raise ValueError("Please provide valid mode: human or yeast")
             # mkae sub_output dir for this sample
             sub_output = os.path.join(output, fastq_ID)
             if not os.path.isdir((sub_output)):
@@ -177,8 +177,8 @@ if __name__ == "__main__":
                                                          'done and will analyze the vcf files.')
     parser.add_argument("-f", "--fastq", help="input fastq files")
     parser.add_argument("-m", "--mode", help="Human or Yeast PPS?")
-    parser.add_argument('-o', "--output",  action="store_true", help='Output directory', required=True)
-    parser.add_argument('-n', "--name", action="store_true", help='Name for this run', required=True)
+    parser.add_argument('-o', "--output", help='Output directory', required=True)
+    parser.add_argument('-n', "--name", help='Name for this run', required=True)
     args = parser.parse_args()
 
     variants_main(args)
