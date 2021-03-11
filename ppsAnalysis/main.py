@@ -77,28 +77,33 @@ def variants_main(arguments):
         all_alignment_jobs = []
         for f in file_list:
             if not f.endswith(".fastq.gz"): continue
-            if not "_R1_" in f: continue
-            r1 = os.path.join(arguments.fastq, f)
-            r2 = os.path.join(arguments.fastq, r1.replace("_R1_", "_R2_"))
+            f = os.path.join(arguments.fastq, f)
             # for all the fastq files in the dir
             # align the fastq files with given reference
             # note that fastq files and the corresponding reference file has the same id
             if arguments.mode == "human":
                 # extract ID
-                fastq_ID = r1.split("-")[-2]
+                fastq_ID = f.split("-")[-2]
                 ref = arguments.ref + "orf9-1_" + fastq_ID
-                # mkae sub_output dir for this sample
-                sub_output = os.path.join(output, fastq_ID)
-                if not os.path.isdir((sub_output)):
-                    os.mkdir(sub_output)
-                # make sh file for submission in sub_output directory for alignment
-                # this is developped for GALEN cluster
-                sh_file = os.path.join(sub_output, f"{fastq_ID}.sh")
-                alignment_obj = ppsAnalysis.alignment.Alignment(ref, fastq_ID, f, sub_output, sh_file, align_log)
-                # the main function writes to the sh file ans submit the file to cluster
-                # return job ID
-                job_id = alignment_obj._main(r1, r2)
-                all_alignment_jobs.append(job_id)
+            elif arguments.mode == "yeast":
+                fastq_ID = f.split(".")[0]
+                # fastq_ID = r1.split("-")[-2]
+                ref = arguments.ref + "ORF_combined_ref"
+            else:
+                raise ValueError("Please provide valie mode: human or yeast")
+            # mkae sub_output dir for this sample
+            sub_output = os.path.join(output, fastq_ID)
+            if not os.path.isdir((sub_output)):
+                os.mkdir(sub_output)
+            # make sh file for submission in sub_output directory for alignment
+            # this is developped for GALEN cluster
+            sh_file = os.path.join(sub_output, f"{fastq_ID}.sh")
+            alignment_obj = ppsAnalysis.alignment.Alignment(ref, f, sub_output, sh_file, align_log)
+            # the main function writes to the sh file ans submit the file to cluster
+            # return job ID
+            at = 12
+            job_id = alignment_obj._main(at)
+            all_alignment_jobs.append(job_id)
         # track all alignment jobs
         alignment_log = logging.getLogger("alignment.log")
         jobs_finished = ppsAnalysis.cluster.parse_jobs_galen(all_alignment_jobs, alignment_log)
