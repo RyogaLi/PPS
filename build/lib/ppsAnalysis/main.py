@@ -61,10 +61,8 @@ def write_full_cover(plate_name, all_genes, full_cover_genes, snp, indel, ref_di
 
 
 def variants_main(arguments):
-
-    check_args(arguments)
     # create output folder with user input name
-    run_name = arguments.name
+    run_name = arguments.n
     output = os.path.join(arguments.output, run_name)
     if not os.path.isdir(output):
         os.mkdir(output)
@@ -79,7 +77,7 @@ def variants_main(arguments):
         all_alignment_jobs = []
         for f in file_list:
             if not f.endswith(".fastq.gz"): continue
-            align_log.info(f)
+            f = os.path.join(arguments.fastq, f)
             # for all the fastq files in the dir
             # align the fastq files with given reference
             # note that fastq files and the corresponding reference file has the same id
@@ -90,23 +88,20 @@ def variants_main(arguments):
             elif arguments.mode == "yeast":
                 fastq_ID = f.split(".")[0]
                 # fastq_ID = r1.split("-")[-2]
-                ref = arguments.ref + "ORF_withpDONR"
+                ref = arguments.ref + "ORF_combined_ref"
             else:
                 raise ValueError("Please provide valid mode: human or yeast")
             # mkae sub_output dir for this sample
-            sub_output = os.path.join(os.path.abspath(output), fastq_ID)
-            print(sub_output)
-            if not os.path.isdir(sub_output):
+            sub_output = os.path.join(output, fastq_ID)
+            if not os.path.isdir((sub_output)):
                 os.mkdir(sub_output)
             # make sh file for submission in sub_output directory for alignment
             # this is developped for GALEN cluster
             sh_file = os.path.join(sub_output, f"{fastq_ID}.sh")
-            f = os.path.join(arguments.fastq, f)
-            print(sh_file)
             alignment_obj = ppsAnalysis.alignment.Alignment(ref, f, sub_output, sh_file, align_log)
             # the main function writes to the sh file ans submit the file to cluster
             # return job ID
-            at = 6
+            at = 12
             job_id = alignment_obj._main(at)
             all_alignment_jobs.append(job_id)
         # track all alignment jobs
@@ -182,7 +177,6 @@ if __name__ == "__main__":
                                                          'done and will analyze the vcf files.')
     parser.add_argument("-f", "--fastq", help="input fastq files")
     parser.add_argument("-m", "--mode", help="Human or Yeast PPS?")
-    parser.add_argument("-r", "--ref", help="Path to referece files")
     parser.add_argument('-o', "--output", help='Output directory', required=True)
     parser.add_argument('-n', "--name", help='Name for this run', required=True)
     args = parser.parse_args()
