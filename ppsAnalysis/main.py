@@ -95,14 +95,12 @@ def variants_main(arguments):
                 raise ValueError("Please provide valid mode: human or yeast")
             # mkae sub_output dir for this sample
             sub_output = os.path.join(os.path.abspath(output), fastq_ID)
-            print(sub_output)
             if not os.path.isdir(sub_output):
                 os.mkdir(sub_output)
             # make sh file for submission in sub_output directory for alignment
             # this is developped for GALEN cluster
             sh_file = os.path.join(sub_output, f"{fastq_ID}.sh")
             f = os.path.join(arguments.fastq, f)
-            print(sh_file)
             alignment_obj = ppsAnalysis.alignment.Alignment(ref, f, sub_output, sh_file, align_log)
             # the main function writes to the sh file ans submit the file to cluster
             # return job ID
