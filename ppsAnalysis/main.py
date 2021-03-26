@@ -113,9 +113,9 @@ def variants_main(arguments):
         jobs_finished = ppsAnalysis.cluster.parse_jobs_galen(all_alignment_jobs, alignment_log)
         if jobs_finished:
             main_logger.info("Alignment jobs all finished")
-
     # for each sample, parse vcf files
     all_log = []
+    genes_found = []
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
         if arguments.mode == "human":
@@ -129,11 +129,11 @@ def variants_main(arguments):
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_raw.vcf")
         # there should be only one log file in the dir
         log_file = glob.glob(f"{sub_output}/*.log")[0]
-        if os.path.isfile(raw_vcf_file):
+        if not os.path.isfile(raw_vcf_file):
             main_logger.warning(f"VCF file does not exist: {raw_vcf_file}")
             continue
-        if os.path.isfile(log_file):
-            main_logger.warning(f"log file does not exist: {raw_vcf_file}")
+        if not os.path.isfile(log_file):
+            main_logger.warning(f"log file does not exist: {log_file}")
             continue
         # get information from the log file to make a summary log file for all the samples
         with open(log_file, "r") as log_f:
@@ -142,24 +142,45 @@ def variants_main(arguments):
                     n_reads = line.split(" ")[0]
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
-                all_log.append([fastq_ID, n_reads, perc_aligned])
+            all_log.append([fastq_ID, n_reads, perc_aligned])
 
         # for each vcf file, get how many genes are fully aligned
         if arguments.mode == "human":
             # extract ID
-            fastq_ID = f.split("-")[-2]
+            pass
         else:  # yeast
-            fastq_ID = f.split(".")[0]
+            # first get the genes that are fully covered in the fastq files
             analysisYeast = ppsAnalysis.yeast_variant_analysis.yeastAnalysis(raw_vcf_file, fastq_ID)
-            remove_genes, gene_dict, ref_dict = analysisYeast.main()
-            print(remove_genes)
-            print(gene_dict)
-            print(ref_dict)
-            exit()
+            full_cover_genes, gene_dict, ref_dict = analysisYeast.get_full_cover()
+
+            # all the genes with full coverage
+            n_fully_aligned = len(full_cover_genes.keys())
+            # all genes in ref fasta
+            n_ref = len(ref_dict.keys())
+            # all genes found in this fastq file 
+            n_all_found = len(gene_dict.keys())
+
+            # save all the genes that are fully covered to the output folder
+            fully_covered = pd.DataFrame.from_dict(full_cover_genes, orient='index').reset_index()
+            fully_covered.columns = ["gene_ID", "gene_len", "total_rd", "avg_rd"]
+            fully_covered_file = os.path.join(sub_output, "fully_covered.csv")
+            fully_covered.to_csv(fully_covered_file, index=False)
+
+            genes_found.append([fastq_ID, n_fully_aligned, n_all_found, n_ref])
+
+            # merge fully covered gene to the targeted genes in this sample 
+
+    
     # process all log
     all_log_df = pd.DataFrame(all_log, columns=["sample", "total reads", "alignment rate"])
-    all_log_file = os.path.join(output, "alignment_log.log")
-    all_log_df.to_csv(all_log_file)
+    all_log_file = os.path.join(output, "alignment_log.csv")
+    all_log_df.to_csv(all_log_file, index=False)
+
+    # process summary of number of genes found in each sample
+    all_genes_stats = pd.DataFrame(genes_found, columns=["sample", "fully_aligned", "all_genes_found", "n_ref"])
+    genes_found_file = os.path.join(output, "genes_stats.csv")
+    all_genes_stats.to_csv(genes_found_file, index=False)
+
     # dir_list = os.listdir(output)
     # print(output)
     # for dir in dir_list:

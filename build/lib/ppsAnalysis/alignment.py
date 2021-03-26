@@ -38,7 +38,7 @@ class Alignment(object):
 
         sam_file = os.path.join(self._output, os.path.basename(self._sample).replace(".fastq.gz", ".sam"))
         # r2_sam_file = os.path.join(output_path, os.path.basename(r2).replace(".fastq.gz", ".sam"))
-        log_f = os.path.join(self._output, os.path.basename(self._sh_file).replace(".sh", ".log"))
+        log_f = os.path.join(self._output, os.path.basename(self._sh_file).replace(".sh", ""))
 
         if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
             r1_cmd = f"bowtie2 -a -p 16 --local -x {self._reference} -U {self._sample} -S {sam_file}"
@@ -67,7 +67,13 @@ class Alignment(object):
             # creating a bam index file
             sh.write(f"samtools index {bam_file.replace('.bam', '_sorted.bam')} "
                      f"{bam_file.replace('.bam', '_sorted.bai')}\n")
-            #
+            # create vcf alignment output
+            # first pileup the reads with bcftools mpileup
+            sh.write(f"bcftools mpileup -f {self._reference}.fasta {bam_file.replace('.bam', '_sorted.bam')} >"
+                     f" {bam_file.replace('.bam', '_raw.bcf')}\n")
+            # then convert to vcf files
+            sh.write(f"bcftools view -u {bam_file.replace('.bam', '_raw.bcf')} > {bam_file.replace('.bam', '_raw.vcf')}")
+
             # # convert sam file to a sorted bam file out put from samtools are save in corresponding log files, sterr
             # sh.write(f"samtools view -bS {r2_sam_file} > {r2_bam_file}\n")
             # sh.write(f"samtools sort {r2_bam_file} -o {r2_bam_file.replace('.bam', '_sorted.bam')}\n")
