@@ -7,6 +7,7 @@ Main script for plasmid pool sequencing analysis
 # email: Roujia.li@mail.utoronto.ca
 
 """
+import glob
 
 import pandas as pd
 import os
@@ -14,6 +15,7 @@ import argparse
 
 import ppsAnalysis.alignment
 import ppsAnalysis.cluster
+import ppsAnalysis.yeast_variant_analysis
 import logging.config
 
 
@@ -71,11 +73,10 @@ def variants_main(arguments):
 
     logging.config.fileConfig("./ppsAnalysis/logging.conf")
     main_logger = logging.getLogger("main")
-
+    file_list = os.listdir(arguments.fastq)
     if arguments.align:
         align_log = logging.getLogger("align.log")
         # first align fastq files if user want to use alignment
-        file_list = os.listdir(arguments.fastq)
         all_alignment_jobs = []
         for f in file_list:
             if not f.endswith(".fastq.gz"): continue
@@ -113,6 +114,52 @@ def variants_main(arguments):
         if jobs_finished:
             main_logger.info("Alignment jobs all finished")
 
+    # for each sample, parse vcf files
+    all_log = []
+    for f in file_list:
+        if not f.endswith(".fastq.gz"): continue
+        if arguments.mode == "human":
+            # extract ID
+            fastq_ID = f.split("-")[-2]
+        elif arguments.mode == "yeast":
+            fastq_ID = f.split(".")[0]
+        else:
+            raise ValueError("Wrong mode")
+        sub_output = os.path.join(os.path.abspath(output), fastq_ID)
+        raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_raw.vcf")
+        # there should be only one log file in the dir
+        log_file = glob.glob(f"{sub_output}/*.log")[0]
+        if os.path.isfile(raw_vcf_file):
+            main_logger.warning(f"VCF file does not exist: {raw_vcf_file}")
+            continue
+        if os.path.isfile(log_file):
+            main_logger.warning(f"log file does not exist: {raw_vcf_file}")
+            continue
+        # get information from the log file to make a summary log file for all the samples
+        with open(log_file, "r") as log_f:
+            for line in log_f:
+                if "reads;" in line:
+                    n_reads = line.split(" ")[0]
+                if "alignment rate" in line:
+                    perc_aligned = line.split("%")[0]
+                all_log.append([fastq_ID, n_reads, perc_aligned])
+
+        # for each vcf file, get how many genes are fully aligned
+        if arguments.mode == "human":
+            # extract ID
+            fastq_ID = f.split("-")[-2]
+        else:  # yeast
+            fastq_ID = f.split(".")[0]
+            analysisYeast = ppsAnalysis.yeast_variant_analysis.yeastAnalysis(raw_vcf_file, fastq_ID)
+            remove_genes, gene_dict, ref_dict = analysisYeast.main()
+            print(remove_genes)
+            print(gene_dict)
+            print(ref_dict)
+            exit()
+    # process all log
+    all_log_df = pd.DataFrame(all_log, columns=["sample", "total reads", "alignment rate"])
+    all_log_file = os.path.join(output, "alignment_log.log")
+    all_log_df.to_csv(all_log_file)
     # dir_list = os.listdir(output)
     # print(output)
     # for dir in dir_list:

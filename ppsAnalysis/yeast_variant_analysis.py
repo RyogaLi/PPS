@@ -17,12 +17,12 @@ Analysis of yeast PPS variants (vcf files) generated with samtools
 
 class yeastAnalysis(object):
 
-    def __init__(self, input_dir, basename):
+    def __init__(self, input_vcf, basename):
         """
         Take vcf file from input dir
         :param input_dir: Input dir contains vcf files, sam files and bam files
         """
-        self._rawvcf = f"{basename}.raw.vcf"
+        self._rawvcf = input_vcf
         self._basename = basename
 
     def _get_full_cover(self):
@@ -34,7 +34,7 @@ class yeastAnalysis(object):
             gene_dict = {}
             ref_dict = {}
             for line in raw:
-                # in sam header, grep gene names and gene len
+                # in vcf header, grep gene names and gene len
                 id_line = re.search("<ID=(.+?),length=(.+?)>", line)
                 # assign gene length to geneID
                 if id_line:
@@ -61,4 +61,7 @@ class yeastAnalysis(object):
                     avg_rd = remove_genes[key][1] / remove_genes[key][0]
                     remove_genes[key].append(avg_rd)
 
-        return remove_genes, len(gene_dict.keys()), gene_dict, ref_dict
+        return remove_genes, gene_dict, ref_dict
+
+    def main(self):
+        remove_genes, gene_dict, ref_dict = self._get_full_cover()
