@@ -64,7 +64,7 @@ def write_full_cover(plate_name, all_genes, full_cover_genes, snp, indel, ref_di
 
 def variants_main(arguments):
 
-    check_args(arguments)
+    orfs = check_args(arguments)
     # create output folder with user input name
     run_name = arguments.name
     output = os.path.join(arguments.output, run_name)
@@ -150,7 +150,9 @@ def variants_main(arguments):
             pass
         else:  # yeast
             # first get the genes that are fully covered in the fastq files
-            analysisYeast = ppsAnalysis.yeast_variant_analysis.yeastAnalysis(raw_vcf_file, fastq_ID)
+            orfs_df = orfs[orfs["plate"] == "fastq_ID"]
+            print(orfs_df)
+            analysisYeast = ppsAnalysis.yeast_variant_analysis.yeastAnalysis(raw_vcf_file, fastq_ID, orfs_df)
             full_cover_genes, gene_dict, ref_dict = analysisYeast.get_full_cover()
 
             # all the genes with full coverage
@@ -165,7 +167,8 @@ def variants_main(arguments):
             fully_covered.columns = ["gene_ID", "gene_len", "total_rd", "avg_rd"]
             fully_covered_file = os.path.join(sub_output, "fully_covered.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
-
+            print(fully_covered)
+            exit()
             genes_found.append([fastq_ID, n_fully_aligned, n_all_found, n_ref])
 
             # merge fully covered gene to the targeted genes in this sample 
@@ -181,46 +184,26 @@ def variants_main(arguments):
     genes_found_file = os.path.join(output, "genes_stats.csv")
     all_genes_stats.to_csv(genes_found_file, index=False)
 
-    # dir_list = os.listdir(output)
-    # print(output)
-    # for dir in dir_list:
-    #     if not os.path.isdir(output + "/" + dir):
-    #         continue
-    #     os.chdir(os.path.join(output, dir))
-    #     for file in os.listdir("."):
-    #         # step 4
-    #         # analysis
-    #         # after variant calling
-    #         # filter vcf file and get fully aligned genes with their avg read depth
-    #         if file.endswith(".log") and os.stat(file).st_size == 0:
-    #             os.remove(file)
-    #         if file.endswith(".raw.vcf"):
-    #             print(file)
-    #             # full_cover is a dictionary contains key=gene ids for genes that are fully covered
-    #             # value = [fully covered gene length, average read depth for this gene]
-    #             logger.info("Analyzing %s ...", file)
-    #             full_cover, total_gene_count, all_gene_dict, ref_dict = get_full_cover(file)
-    #             logger.info("Got fully aligned genes in %s", file)
-    #             snp, indel, read_depth = filter_vcf(file, all_gene_dict)
-    #             logger.info("Filtered %s", file.replace(".raw.vcf", "_filtered.vcf"))
-    #
-    #             if clinvar:
-    #                 VA = SnpAnalysis(orf_id_convert, clinvar_db)
-    #                 all_clinvar_snp= VA._main(file.replace(".raw.vcf", "_filtered.vcf"))
-    #                 all_clinvar_snp.drop_duplicates()
-    #                 # write this information to file
-    #                 all_clinvar_snp.to_csv(path_or_buf="./clinvar_variants.txt", sep="\t")
-    #                 print(all_clinvar_snp)
-    #             else:
-    #                 out_file = output + "summary.csv"
-    #                 write_full_cover(file, all_gene_dict, full_cover, snp, indel, ref_dict, out_file)
-    #
-    #             # take top 5 genes based on read depth
-    #             # plot_top_n(snp, indel, read_depth, 3)
-    #             # logger.info("Plot generated")
-    #             logger.info("Analaysis done for %s \n", file)
 
-        # break
+def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
+    """
+    Join HIP data and other data into one df, remove unwanted columns
+    :param HIP_target_ORFs: csv file contains which HIP ORF is in which sample
+    :param other_target_ORFs: csv file contains which other ORF is in which sample
+    :return: df with ORF name, db name and sample name
+    """
+    HIP_df = pd.read_csv(HIP_target_ORFs)
+    other_target_ORFs = pd.read_csv(other_target_ORFs)
+
+    HIP_df = HIP_df[["ORF_NAME_NODASH", "len(seq)", "SYMBOL", "scORFeome_384-format_HIP Plate"]]
+    HIP_df["db"] = "HIP"
+    HIP_df = HIP_df.rename(columns={"ORF_NAME_NODASH": "orf_name", "scORFeome_384-format_HIP Plate": "plate"})
+    other_ORFs = other_target_ORFs[["orf_name", "src_collection", "Condensed plate"]]
+    other_ORFs = other_ORFs.rename(columns={"src_collection": "db", "Condensed plate": "plate"})
+    other_ORFs['plate'] = 'scORFeome-' + other_ORFs['plate'].astype(str)
+    combined = pd.concat([HIP_df, other_target_ORFs], axis=0, ignore_index=True)
+    print(combined)
+    return combined
 
 
 def check_args(arguments):
@@ -240,6 +223,19 @@ def check_args(arguments):
         # if alignment, must also provide path to fastq files and reference files
         if not arguments.fastq or not arguments.ref:
             raise ValueError("Please also provide reference dir and fastq dir")
+
+    if arguments.mode == "yeast":
+        # load yeast data
+        # files contain ORF information in
+        HIP_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/HIP_targeted_ORFs"
+        other_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/other_targeted_ORFs.csv"
+        orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
+    elif arguments.mode == "human":
+        orfs =""
+    else:
+        exit()
+
+    return orfs
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plasmid pool sequencing analysis')

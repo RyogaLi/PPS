@@ -17,13 +17,15 @@ Analysis of yeast PPS variants (vcf files) generated with samtools
 
 class yeastAnalysis(object):
 
-    def __init__(self, input_vcf, basename):
+    def __init__(self, input_vcf, basename, orfs_df):
         """
         Take vcf file from input dir
-        :param input_dir: Input dir contains vcf files, sam files and bam files
+        :param input_: Input dir contains vcf files, sam files and bam files
         """
         self._rawvcf = input_vcf
         self._basename = basename
+        # contains all the targeted orfs for this sample
+        self._orfs = orfs_df
 
     def get_full_cover(self):
         """
