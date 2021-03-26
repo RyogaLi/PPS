@@ -69,10 +69,10 @@ class Alignment(object):
                      f"{bam_file.replace('.bam', '_sorted.bai')}\n")
             # create vcf alignment output
             # first pileup the reads with bcftools mpileup
-            sh.write(f"bcftools mpileup -uf {self._reference} {bam_file.replace('.bam', '_sorted.bam')} >"
-                     f" {self._basename}.raw.bcf")
+            sh.write(f"bcftools mpileup -f {self._reference}.fasta {bam_file.replace('.bam', '_sorted.bam')} >"
+                     f" {bam_file.replace('.bam', '_raw.bcf')}\n")
             # then convert to vcf files
-            sh.write(f"bcftools view -u {self._basename}.raw.bcf > {self._basename}.raw.vcf")
+            sh.write(f"bcftools view -u {bam_file.replace('.bam', '_raw.bcf')} > {bam_file.replace('.bam', '_raw.vcf')}")
 
             # # convert sam file to a sorted bam file out put from samtools are save in corresponding log files, sterr
             # sh.write(f"samtools view -bS {r2_sam_file} > {r2_bam_file}\n")
