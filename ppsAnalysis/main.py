@@ -116,6 +116,9 @@ def variants_main(arguments):
     # for each sample, parse vcf files
     all_log = []
     genes_found = []
+    all_genes_summary = pd.DataFrame([], columns=["expected_orf_name", "len(seq)", "SYMBOL", "plate", "db_expected" ,"aligned_orf", "gene_len", "total_rd", "avg_rd", "db_aligned"])
+    all_summary = os.path.join(output, "all_summary.csv")
+    all_genes_summary.to_csv(all_summary, index=False)
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
         if arguments.mode == "human":
@@ -168,7 +171,6 @@ def variants_main(arguments):
             # split gene ID col 
             fully_covered["gene_ID"] = fully_covered["gene_ID"].str.replace("gene", "")
             fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
-            print(fully_covered["gene_ID"]) 
             try: 
                 fully_covered[["gene_ID", "db"]] = fully_covered["gene_ID"].str.split("_", expand=True)
             except:
@@ -185,19 +187,24 @@ def variants_main(arguments):
             # merge with target orfs
             merged_df = pd.merge(orfs_df, filtered_db, how="left", left_on="orf_name", right_on="gene_ID")
             merged_file = os.path.join(sub_output, "merged_with_targets.csv")
+            print(orfs_df)
+            print(merged_df)
             merged_df.to_csv(merged_file, index=False)
-            genes_found.append([fastq_ID, n_fully_aligned, n_all_found, n_ref])
-
+            merged_df.to_csv(all_summary, mode="a", index=False, header=False)
+            n_targeted = orfs_df.shape[0]
+            n_targeted_full = merged_df[~merged_df["gene_ID"].isnull()].shape[0]
+            genes_found.append([fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_ref])
+            
             # merge fully covered gene to the targeted genes in this sample 
 
     
     # process all log
-    all_log_df = pd.DataFrame(all_log, columns=["sample", "total reads", "alignment rate"])
+    all_log_df = pd.DataFrame(all_log, columns=["plate", "total reads", "alignment rate"])
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log_df.to_csv(all_log_file, index=False)
 
     # process summary of number of genes found in each sample
-    all_genes_stats = pd.DataFrame(genes_found, columns=["sample", "fully_aligned", "all_genes_found", "n_ref"])
+    all_genes_stats = pd.DataFrame(genes_found, columns=["plate", "fully_aligned", "all_genes_found", "all_targeted_on_plate", "all_targeted_full", "n_ref"])
     genes_found_file = os.path.join(output, "genes_stats.csv")
     all_genes_stats.to_csv(genes_found_file, index=False)
 
@@ -217,7 +224,7 @@ def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     HIP_df = HIP_df.rename(columns={"ORF_NAME_NODASH": "orf_name"})
     other_ORFs = other_target_ORFs[["orf_name", "src_collection", "plate"]]
     other_ORFs = other_ORFs.rename(columns={"src_collection": "db"})
-    other_ORFs['plate'] = 'scORFeome-' + other_ORFs['plate'].astype(str)
+    #other_ORFs['plate'] = 'scORFeome-' + other_ORFs['plate'].astype(str)
     combined = pd.concat([HIP_df, other_ORFs], axis=0, ignore_index=True)
     return combined
 
