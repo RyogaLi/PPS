@@ -23,6 +23,7 @@ class yeastAnalysis(object):
         :param input_: Input dir contains vcf files, sam files and bam files
         """
         self._rawvcf = input_vcf
+        self._vvcf = input_vcf.replace("_raw", "_variants")
         self._basename = basename
         # contains all the targeted orfs for this sample
         self._orfs = orfs_df
@@ -64,5 +65,40 @@ class yeastAnalysis(object):
                     remove_genes[key].append(avg_rd)
         return remove_genes, gene_dict, ref_dict
 
+    def filter_vcf(self):
+        """
+        for a given vcf (with variants only), filter the variants based on QUAL and DP
+        write passed filter variants to a new vcf file 
+        """
+        
+        filtered_vcf = self._vvcf.replace("_variants", "_filtered")
+        mut_count_dict = {}
+        with open(self._vvcf, "r") as rawvcf:
+            with open(filtered_vcf, "w") as filteredvcf:
+                for line in rawvcf:
+                    if "#" in line: continue
+                    l = line.split()
+                    # get DP for this position 
+                    match_str = "DP=([0-9]+)"
+                    m = re.search(match_str, l[7])
+                    if m:
+                        dp = int(m.group(1))
+                    #if dp < 10: continue
+
+                    # get variant call with quality > 20
+                    try:
+                        qual = float(l[5])
+                    except:
+                        continue
+                    #if qual < 20: continue
+
+                    # track how many variants for each gene (with more than 10 reads mapped to it)
+                    if mut_count_dict.get(l[0], -1) == -1:
+                        mut_count_dict[l[0]] = 1
+                    else:
+                        mut_count_dict[l[0]] += 1
+                    filteredvcf.write(line)
+        return mut_count_dict
+    
     def _process_target_genes(self):
         pass

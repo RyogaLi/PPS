@@ -157,7 +157,7 @@ def variants_main(arguments):
           
             analysisYeast = ppsAnalysis.yeast_variant_analysis.yeastAnalysis(raw_vcf_file, fastq_ID, orfs_df)
             full_cover_genes, gene_dict, ref_dict = analysisYeast.get_full_cover()
-
+        
             # all the genes with full coverage
             n_fully_aligned = len(full_cover_genes.keys())
             # all genes in ref fasta
@@ -184,27 +184,42 @@ def variants_main(arguments):
             else:
                 filtered_db = fully_covered[fully_covered["db"] != "HIP"]
 
+            # filter vcf based on QUAL and DP
+            mut_count_dict = analysisYeast.filter_vcf()
+            gene_mut_count = pd.DataFrame.from_dict(mut_count_dict, orient='index').reset_index()
+            gene_mut_count.columns = ["gene_name", "n_variants"]
+            n_mut_genes = len(mut_count_dict)
+
             # merge with target orfs
             merged_df = pd.merge(orfs_df, filtered_db, how="left", left_on="orf_name", right_on="gene_ID")
             merged_file = os.path.join(sub_output, "merged_with_targets.csv")
-            print(orfs_df)
-            print(merged_df)
             merged_df.to_csv(merged_file, index=False)
             merged_df.to_csv(all_summary, mode="a", index=False, header=False)
             n_targeted = orfs_df.shape[0]
             n_targeted_full = merged_df[~merged_df["gene_ID"].isnull()].shape[0]
-            genes_found.append([fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_ref])
+            genes_found.append([fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full,n_mut_genes, n_ref])
             
-            # merge fully covered gene to the targeted genes in this sample 
+            # merge with ref to get gene len
+            ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
+            ref.columns = ["gene_name", "gene_len"]
+            merge_mut_count = pd.merge(gene_mut_count, ref, how="left", on="gene_name")
+            # split gene name col 
+            merge_mut_count["gene_ID"] = merge_mut_count["gene_name"].str.replace("gene", "")
+            merge_mut_count = merge_mut_count.replace(to_replace ='-index[0-9]+', value = '', regex = True)
+            # merge this with targeted ORFs 
+            target_gene_mut_count = pd.merge(orfs_df, merge_mut_count, how="left", left_on="orf_name", right_on="gene_ID")
+            print(target_gene_mut_count[target_gene_mut_count["n_variants"].notnull()])
+            # save to file 
+            target_gene_mut_file = os.path.join(sub_output, "target_gene_mutcount.csv")
+            target_gene_mut_count.to_csv(target_gene_mut_file, index=False)
 
-    
     # process all log
     all_log_df = pd.DataFrame(all_log, columns=["plate", "total reads", "alignment rate"])
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log_df.to_csv(all_log_file, index=False)
 
     # process summary of number of genes found in each sample
-    all_genes_stats = pd.DataFrame(genes_found, columns=["plate", "fully_aligned", "all_genes_found", "all_targeted_on_plate", "all_targeted_full", "n_ref"])
+    all_genes_stats = pd.DataFrame(genes_found, columns=["plate", "fully_aligned", "all_genes_found", "all_targeted_on_plate", "all_targeted_full", "n_genes_with_any_mut", "n_ref"])
     genes_found_file = os.path.join(output, "genes_stats.csv")
     all_genes_stats.to_csv(genes_found_file, index=False)
 
