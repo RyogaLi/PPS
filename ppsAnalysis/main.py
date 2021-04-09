@@ -19,49 +19,6 @@ import ppsAnalysis.yeast_variant_analysis
 import logging.config
 
 
-def write_full_cover(plate_name, all_genes, full_cover_genes, snp, indel, ref_dict, output_file):
-    """
-
-    :param plate_name: str
-    :param all_genes: dictionary
-    :param full_cover_genes:
-    :param snp:
-    :param indel:
-    :param ref_dict:
-    :param output_file:
-    :return:
-    """
-    with open(output_file, "a") as output_file:
-        output_file.write("plate_name,gene_name,gene_length,aligned_length,alignment_rate,total_read_count,average_read_depth,number_of_SNP,number_of_INDEL\n")
-        for gene in all_genes.keys():
-            if gene in full_cover_genes:
-                all_genes = full_cover_genes
-            if gene in snp.keys():
-
-                line = [plate_name,
-                        gene,
-                        str(ref_dict[gene]),
-                        str(all_genes[gene][0]),
-                        str(all_genes[gene][0]/ref_dict[gene]),
-                        str(all_genes[gene][1]),
-                        str(all_genes[gene][2]),
-                        str(len(snp[gene])),
-                        "0"]
-            else:
-                line = [plate_name,
-                        gene,
-                        str(ref_dict[gene]),
-                        str(all_genes[gene][0]),
-                        str(all_genes[gene][0]/ref_dict[gene]),
-                        str(all_genes[gene][1]),
-                        str(all_genes[gene][2]),
-                        "0",
-                        "0"]
-            if gene in indel.keys():
-                line[-1] = str(indel[gene])
-            output_file.write(",".join(line)+"\n")
-
-
 def variants_main(arguments):
 
     orfs = check_args(arguments)
@@ -242,7 +199,6 @@ def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     #other_ORFs['plate'] = 'scORFeome-' + other_ORFs['plate'].astype(str)
     combined = pd.concat([HIP_df, other_ORFs], axis=0, ignore_index=True)
     return combined
-
 
 def check_args(arguments):
     """
