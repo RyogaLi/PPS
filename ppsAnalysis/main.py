@@ -44,11 +44,11 @@ def variants_main(arguments):
             if arguments.mode == "human":
                 # extract ID
                 fastq_ID = f.split("-")[-2]
-                ref = arguments.ref + "orf9-1_" + fastq_ID
+            #    ref = arguments.ref + "orf9-1_" + fastq_ID
             elif arguments.mode == "yeast":
                 fastq_ID = f.split("_")[0]
                 # fastq_ID = r1.split("-")[-2]
-                ref = arguments.ref + "ORF_withpDONR"
+            #    ref = arguments.ref + "ORF_withpDONR"
             else:
                 raise ValueError("Please provide valid mode: human or yeast")
             # mkae sub_output dir for this sample
@@ -59,11 +59,11 @@ def variants_main(arguments):
             # this is developped for GALEN cluster
             sh_file = os.path.join(sub_output, f"{fastq_ID}.sh")
             f = os.path.join(arguments.fastq, f)
-            alignment_obj = ppsAnalysis.alignment.Alignment(ref, f, sub_output, sh_file, align_log)
+            alignment_obj = ppsAnalysis.alignment.Alignment(arguments.ref, arguments.mode, f, sub_output, sh_file, align_log)
             # the main function writes to the sh file ans submit the file to cluster
             # return job ID
-            at = 6
-            job_id = alignment_obj._main(at)
+            at = 9
+            job_id = alignment_obj.main(at)
             all_alignment_jobs.append(job_id)
         # track all alignment jobs
         alignment_log = logging.getLogger("alignment.log")
@@ -126,12 +126,10 @@ def variants_main(arguments):
             fully_covered = pd.DataFrame.from_dict(full_cover_genes, orient='index').reset_index()
             fully_covered.columns = ["gene_ID", "gene_len", "total_rd", "avg_rd"]
             # split gene ID col 
-            fully_covered["gene_ID"] = fully_covered["gene_ID"].str.replace("gene", "")
-            fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
-            try: 
-                fully_covered[["gene_ID", "db"]] = fully_covered["gene_ID"].str.split("_", expand=True)
-            except:
-                fully_covered["db"] = "smorf"
+            #fully_covered["gene_ID"] = fully_covered["gene_ID"].str.replace("gene", "")
+            #fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
+            fully_covered[["gene_ID", "db", "count"]] = fully_covered["gene_ID"].str.split("-", expand=True)
+            #fully_covered["db"] = "smorf"
             fully_covered_file = os.path.join(sub_output, "fully_covered.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
 
@@ -191,14 +189,77 @@ def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     HIP_df = pd.read_csv(HIP_target_ORFs)
     other_target_ORFs = pd.read_csv(other_target_ORFs)
 
-    HIP_df = HIP_df[["ORF_NAME_NODASH", "len(seq)", "SYMBOL", "plate"]]
+    HIP_df = HIP_df[["ORF_id", "len(seq)", "SYMBOL", "plate"]]
     HIP_df["db"] = "HIP"
-    HIP_df = HIP_df.rename(columns={"ORF_NAME_NODASH": "orf_name"})
+    HIP_df = HIP_df.rename(columns={"ORF_id": "orf_name"})
     other_ORFs = other_target_ORFs[["orf_name", "src_collection", "plate"]]
     other_ORFs = other_ORFs.rename(columns={"src_collection": "db"})
     #other_ORFs['plate'] = 'scORFeome-' + other_ORFs['plate'].astype(str)
     combined = pd.concat([HIP_df, other_ORFs], axis=0, ignore_index=True)
     return combined
+
+
+def analysisYeast(raw_vcf_file, fastq_ID, orfs_df, output_dir):
+    """
+    Run yeast variants analysis, make files for each plate and save to corresponded dir
+    also return dfs for combining
+    """
+    analysis = ppsAnalysis.yeast_variant_analysis.yeastAnalysis(raw_vcf_file, fastq_ID, orfs_df)
+    full_cover_genes, gene_dict, ref_dict = analysis.get_full_cover()
+        
+    # all the genes with full coverage
+    n_fully_aligned = len(full_cover_genes.keys())
+    # all genes in ref fasta
+    n_ref = len(ref_dict.keys())
+    # all genes found in this fastq file 
+    n_all_found = len(gene_dict.keys())
+
+    # save all the genes that are fully covered to the output folder
+    fully_covered = pd.DataFrame.from_dict(full_cover_genes, orient='index').reset_index()
+    fully_covered.columns = ["gene_ID", "gene_len", "total_rd", "avg_rd"]
+    # split gene ID col 
+    #fully_covered["gene_ID"] = fully_covered["gene_ID"].str.replace("gene", "")
+    fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
+    fully_covered[["gene_ID", "db", "count"]] = fully_covered["gene_ID"].str.split("-", expand=True)
+            #fully_covered["db"] = "smorf"
+            #fully_covered_file = os.path.join(sub_output, "fully_covered.csv")
+            #fully_covered.to_csv(fully_covered_file, index=False)
+
+    # select from fully_covered based on which db the orf is from
+            #if "HIP" in fastq_ID:
+            #    filtered_db = fully_covered[fully_covered["db"] == "HIP"]
+            #else:
+            #    filtered_db = fully_covered[fully_covered["db"] != "HIP"]
+
+    # filter vcf based on QUAL and DP
+    mut_count_dict = analysis.filter_vcf()
+    gene_mut_count = pd.DataFrame.from_dict(mut_count_dict, orient='index').reset_index()
+    gene_mut_count.columns = ["gene_name", "n_variants"]
+    n_mut_genes = len(mut_count_dict)
+
+    # merge with target orfs
+    merged_df = pd.merge(orfs_df, filtered_db, how="left", left_on="orf_name", right_on="gene_ID")
+    merged_file = os.path.join(sub_output, "merged_with_targets.csv")
+    merged_df.to_csv(merged_file, index=False)
+    merged_df.to_csv(all_summary, mode="a", index=False, header=False)
+    n_targeted = orfs_df.shape[0]
+    n_targeted_full = merged_df[~merged_df["gene_ID"].isnull()].shape[0]
+    stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full,n_mut_genes, n_ref]
+            
+    # merge with ref to get gene len
+    ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
+    ref.columns = ["gene_name", "gene_len"]
+    merge_mut_count = pd.merge(gene_mut_count, ref, how="left", on="gene_name")
+    # split gene name col 
+    merge_mut_count["gene_ID"] = merge_mut_count["gene_name"].str.replace("gene", "")
+    merge_mut_count = merge_mut_count.replace(to_replace ='-index[0-9]+', value = '', regex = True)
+    # merge this with targeted ORFs 
+    target_gene_mut_count = pd.merge(orfs_df, merge_mut_count, how="left", left_on="orf_name", right_on="gene_ID")
+    # save to file 
+    target_gene_mut_file = os.path.join(sub_output, "target_gene_mutcount.csv")
+    target_gene_mut_count.to_csv(target_gene_mut_file, index=False)
+
+    return fully_covered, stats_list
 
 def check_args(arguments):
     """
