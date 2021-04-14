@@ -173,7 +173,7 @@ def variants_main(arguments):
     plt.yticks(fontsize=15)
     plt.ylabel("all the fully aligned unique ORFs", fontsize=15)
     plt.tight_layout()
-    plt.savefig("./test_perc.png")
+    plt.savefig(os.path.join(output, "./perc_full_matched.png"))
     plt.close()
 
     # compare genes in all the targeted space (ORFs) vs all fully aligned 
@@ -182,7 +182,7 @@ def variants_main(arguments):
     all_found["gene_name"] = all_found["gene_name"].replace("-", "")
     all_found_genes = all_found["gene_name"].dropna().unique()
     venn2([set(all_targeted_unique_db), set(all_found_genes)], set_labels = ("all ORFs", "all_fully_aligned"))
-    plt.savefig("./testvenn2.png")
+    plt.savefig(os.path.join(output, "./allORFs_venn.png"))
     plt.close()
 
     # HIP subset
@@ -191,7 +191,7 @@ def variants_main(arguments):
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
     venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all HIP ORFs", "all_fully_aligned"))
-    plt.savefig("./testvenn2_hip.png")
+    plt.savefig(os.path.join(output, "./HIPORFs_venn.png"))
     plt.close()
 
     # SGD subset
@@ -200,7 +200,7 @@ def variants_main(arguments):
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
     venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all SGD ORFs", "all_fully_aligned"))
-    plt.savefig("./testvenn2_SGD.png")
+    plt.savefig(os.path.join(output, "./SGDORFs_venn.png"))
     plt.close()
 
     # PROTGEN subset
@@ -209,7 +209,7 @@ def variants_main(arguments):
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
     venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all PROTGEN ORFs", "all_fully_aligned"))
-    plt.savefig("./testvenn2_PROTGEN.png")
+    plt.savefig(os.path.join(output, "./PROTORFs_venn.png"))
     plt.close()
 
 
