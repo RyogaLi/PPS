@@ -117,19 +117,15 @@ def variants_main(arguments):
             # first get the genes that are fully covered in the fastq files
             orfs_df = orfs[orfs["plate"] == fastq_ID]
             raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allORFs_raw.vcf")
-            if not os.path.isfile(raw_vcf_file):
-
-                main_logger.warning(f"VCF file does not exist: {raw_vcf_file}")
-                continue
-            # analysis of ORFs aligned to all ref + backbone
-            fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-            fully_covered_file = os.path.join(sub_output, "fully_covered_allORFs.csv")
-            fully_covered.to_csv(fully_covered_file, index=False)
-            stats_list.append("allORFs")
-            genes_found.append(stats_list)
+            if os.path.isfile(raw_vcf_file):
+                # analysis of ORFs aligned to all ref + backbone
+                fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+                fully_covered_file = os.path.join(sub_output, "fully_covered_allORFs.csv")
+                fully_covered.to_csv(fully_covered_file, index=False)
+                stats_list.append("allORFs")
+                genes_found.append(stats_list)
             
             raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allwithbackbone_raw.vcf")
-            print(raw_vcf_file)
             if os.path.isfile(raw_vcf_file):
                 # analysis of ORFs aligned to all ref
                 fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
@@ -139,120 +135,82 @@ def variants_main(arguments):
                 genes_found.append(stats_list)
 
             raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_plateORFs_raw.vcf")
-            if not os.path.isfile(raw_vcf_file):
-                main_logger.warning(f"VCF file does not exist: {raw_vcf_file}")
-                continue
-            # analysis of ORFs aligned to subgroup
-            fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-            fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
-            fully_covered.to_csv(fully_covered_file, index=False)
-            fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
-            stats_list.append("plateORFs")
-            genes_found.append(stats_list)
+            if os.path.isfile(raw_vcf_file):
+                # analysis of ORFs aligned to subgroup
+                fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+                fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
+                fully_covered.to_csv(fully_covered_file, index=False)
+                fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
+                stats_list.append("plateORFs")
+                genes_found.append(stats_list)
 
             raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_subsetORFs_raw.vcf")
             if not os.path.isfile(raw_vcf_file):
-                main_logger.warning(f"VCF file does not exist: {raw_vcf_file}")
-                continue
-            # analysis of ORFs aligned to plate
-            fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-            fully_covered_file = os.path.join(sub_output, "fully_covered_subsetORFs.csv")
-            fully_covered.to_csv(fully_covered_file, index=False)
-            stats_list.append("subsetORFs")
-            genes_found.append(stats_list)
-            
-            # # merge with ref to get gene len
-            # ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
-            # ref.columns = ["gene_name", "gene_len"]
-            # merge_mut_count = pd.merge(gene_mut_count, ref, how="left", on="gene_name")
-            # # split gene name col
-            # merge_mut_count["gene_ID"] = merge_mut_count["gene_name"].str.replace("gene", "")
-            # merge_mut_count = merge_mut_count.replace(to_replace ='-index[0-9]+', value = '', regex = True)
-            # # merge this with targeted ORFs
-            # target_gene_mut_count = pd.merge(orfs_df, merge_mut_count, how="left", left_on="orf_name", right_on="gene_ID")
-            # print(target_gene_mut_count[target_gene_mut_count["n_variants"].notnull()])
-            # # save to file
-            # target_gene_mut_file = os.path.join(sub_output, "target_gene_mutcount.csv")
-            # target_gene_mut_count.to_csv(target_gene_mut_file, index=False)
+                # analysis of ORFs aligned to plate
+                fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+                fully_covered_file = os.path.join(sub_output, "fully_covered_subsetORFs.csv")
+                fully_covered.to_csv(fully_covered_file, index=False)
+                stats_list.append("subsetORFs")
+                genes_found.append(stats_list)
 
     # process all log
     all_log = pd.DataFrame(all_log)
-    print(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log.to_csv(all_log_file, index=False)
 
     # process summary of number of genes found in each sample
-    print(genes_found)
     all_genes_stats = pd.DataFrame(genes_found, columns=["plate", "fully_aligned", "all_genes_found",
                                                          "all_targeted_on_plate", "all_targeted_full",
                                                          "n_genes_with_any_mut", "n_ref", "aligned_to"])
     genes_found_file = os.path.join(output, "genes_stats.csv")
-    all_genes_stats.to_csv(genes_found_file, index=False)
+
     all_genes_stats["% on plate fully aligned"] = all_genes_stats["all_targeted_full"]/all_genes_stats["all_targeted_on_plate"]
-    print(all_genes_stats)
+    all_genes_stats.to_csv(genes_found_file, index=False)
     sns.set_theme(style="whitegrid", font_scale=1.5)
     plt.figure(figsize=(20,14))
     g = sns.barplot(data = all_genes_stats, x = "plate", y = "% on plate fully aligned", hue="aligned_to")
-    plt.xticks(rotation=25, fontsize=15)
+    plt.xticks(rotation=90, fontsize=15)
     plt.yticks(fontsize=15)
     plt.ylabel("all the fully aligned unique ORFs", fontsize=15)
+    plt.tight_layout()
     plt.savefig("./test_perc.png")
     plt.close()
-    print(orfs)
-    print(orfs.columns)
+
     # compare genes in all the targeted space (ORFs) vs all fully aligned 
     all_targeted_unique_db = orfs["ORF_NAME_NODASH"].dropna().unique()
-    print(all_targeted_unique_db)
     all_found = pd.read_csv(all_summary)
-    print(all_found)
-    print(all_found.columns)
-    print(all_found["db"].unique())
     all_found["gene_name"] = all_found["gene_name"].replace("-", "")
     all_found_genes = all_found["gene_name"].dropna().unique()
     venn2([set(all_targeted_unique_db), set(all_found_genes)], set_labels = ("all ORFs", "all_fully_aligned"))
     plt.savefig("./testvenn2.png")
     plt.close()
-    print(np.setdiff1d(all_found_genes, all_targeted_unique_db))
-    print(np.setdiff1d(all_targeted_unique_db, all_found_genes))
-     
+
     # HIP subset
     all_HIP_targeted = orfs[orfs["db"] == "HIP"]["ORF_NAME_NODASH"].dropna().unique() 
     all_found_hip = all_found[all_found["db"] == "HIP"]
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    print(all_found_genes)
     venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all HIP ORFs", "all_fully_aligned"))
     plt.savefig("./testvenn2_hip.png")
     plt.close()
-    print(np.setdiff1d(all_found_genes, all_HIP_targeted))
-    print(np.setdiff1d(all_HIP_targeted, all_found_genes))
 
     # SGD subset
     all_HIP_targeted = orfs[orfs["db"] == "SGD"]["ORF_NAME_NODASH"].dropna().unique() 
     all_found_hip = all_found[all_found["db"] == "SGD"]
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    print(all_found_genes)
     venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all SGD ORFs", "all_fully_aligned"))
     plt.savefig("./testvenn2_SGD.png")
     plt.close()
-    print(np.setdiff1d(all_found_genes, all_HIP_targeted))
-    print(np.setdiff1d(all_HIP_targeted, all_found_genes))
-
 
     # PROTGEN subset
     all_HIP_targeted = orfs[orfs["db"] == "PROTGEN"]["ORF_NAME_NODASH"].dropna().unique() 
     all_found_hip = all_found[all_found["db"] == "PROTGEN"]
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    print(all_found_genes)
     venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all PROTGEN ORFs", "all_fully_aligned"))
     plt.savefig("./testvenn2_PROTGEN.png")
     plt.close()
-    print(np.setdiff1d(all_found_genes, all_HIP_targeted))
-    print(np.setdiff1d(all_HIP_targeted, all_found_genes))
-
-
 
 
 def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
@@ -314,7 +272,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     n_targeted = orfs_df.shape[0]
     n_targeted_full = merged_df[~merged_df["gene_ID"].isnull()].shape[0]
     stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full,n_mut_genes, n_ref]
-            
+
     # # merge with ref to get gene len
     # ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
     # ref.columns = ["gene_name", "gene_len"]

@@ -83,15 +83,15 @@ class yeastAnalysis(object):
                     m = re.search(match_str, l[7])
                     if m:
                         dp = int(m.group(1))
-                    #if dp < 10: continue
+                    if dp < 10: continue
 
                     # get variant call with quality > 20
                     try:
                         qual = float(l[5])
                     except:
                         continue
-                    #if qual < 20: continue
-
+                    if qual < 20: continue
+                    
                     # track how many variants for each gene (with more than 10 reads mapped to it)
                     if mut_count_dict.get(l[0], -1) == -1:
                         mut_count_dict[l[0]] = 1
