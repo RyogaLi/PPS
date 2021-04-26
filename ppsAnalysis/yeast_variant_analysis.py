@@ -102,3 +102,9 @@ class yeastAnalysis(object):
     
     def _process_target_genes(self):
         pass
+
+    def filter_full_vcf(self):
+        """
+        Filter vcf file (full, including ambiguous and non-variant sites)
+        :return: mut_count_dict
+        """

@@ -18,25 +18,26 @@ import seaborn as sns
 import ppsAnalysis.alignment
 import ppsAnalysis.cluster
 import ppsAnalysis.yeast_variant_analysis
-import logging.config
+import ppsAnalysis.logthis
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn2, venn2_circles, venn2_unweighted
 
 
 def variants_main(arguments):
-
+    loglevel = "DEBUG"
     orfs = check_args(arguments)
     # create output folder with user input name
     run_name = arguments.name
     output = os.path.join(arguments.output, run_name)
     if not os.path.isdir(output):
         os.mkdir(output)
-
-    logging.config.fileConfig("./ppsAnalysis/logging.conf")
-    main_logger = logging.getLogger("main")
+    # make main log file
+    main_log = os.path.join(output, "main.log")
+    log_obj = ppsAnalysis.logthis.logit(log_f=main_log, log_level=loglevel)
+    main_logger = log_obj.get_logger("main")
     file_list = os.listdir(arguments.fastq)
     if arguments.align:
-        align_log = logging.getLogger("align.log")
+        align_log = log_obj.get_logger("align.log")
         # first align fastq files if user want to use alignment
         all_alignment_jobs = []
         for f in file_list:
@@ -70,18 +71,23 @@ def variants_main(arguments):
             job_id = alignment_obj.main(at)
             all_alignment_jobs.append(job_id)
         # track all alignment jobs
-        alignment_log = logging.getLogger("alignment.log")
-        jobs_finished = ppsAnalysis.cluster.parse_jobs_galen(all_alignment_jobs, alignment_log)
+        cluster_log = log_obj.get_logger("alignment.log")
+        jobs_finished = ppsAnalysis.cluster.parse_jobs_galen(all_alignment_jobs, cluster_log)
         if jobs_finished:
             main_logger.info("Alignment jobs all finished")
 
+        # after all alignment jobs finish, check VCF files and parse vcf files
+        parse_vcf_files(output, file_list, arguments, orfs, main_logger)
+
+def parse_vcf_files(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
-    all_log = {"fastq_ID": [], "reads":[], "map_perc":[]}
+    all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
-    all_genes_summary = pd.DataFrame([], columns=["gene_ID", "gene_len", "total_rd", "avg_rd", "db", "count", "gene_name"])
+    all_genes_summary = pd.DataFrame([],
+                                     columns=["gene_ID", "gene_len", "total_rd", "avg_rd", "db", "count", "gene_name"])
     all_summary = os.path.join(output, "all_summary_subsetORF.csv")
     all_genes_summary.to_csv(all_summary, index=False)
-    
+
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
         if arguments.mode == "human":
@@ -97,7 +103,7 @@ def variants_main(arguments):
         log_file = glob.glob(f"{sub_output}/*.log")[0]
 
         if not os.path.isfile(log_file):
-            main_logger.warning(f"log file does not exist: {log_file}")
+            logger.warning(f"log file does not exist: {log_file}")
             continue
         # get information from the log file to make a summary log file for all the samples
         with open(log_file, "r") as log_f:
@@ -108,7 +114,7 @@ def variants_main(arguments):
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
-        all_log["fastq_ID"] += [fastq_ID]*3
+        all_log["fastq_ID"] += [fastq_ID] * 3
         # for each vcf file, get how many genes are fully aligned
         if arguments.mode == "human":
             # extract ID
@@ -124,7 +130,7 @@ def variants_main(arguments):
                 fully_covered.to_csv(fully_covered_file, index=False)
                 stats_list.append("allORFs")
                 genes_found.append(stats_list)
-            
+
             raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allwithbackbone_raw.vcf")
             if os.path.isfile(raw_vcf_file):
                 # analysis of ORFs aligned to all ref
@@ -164,11 +170,12 @@ def variants_main(arguments):
                                                          "n_genes_with_any_mut", "n_ref", "aligned_to"])
     genes_found_file = os.path.join(output, "genes_stats.csv")
 
-    all_genes_stats["% on plate fully aligned"] = all_genes_stats["all_targeted_full"]/all_genes_stats["all_targeted_on_plate"]
+    all_genes_stats["% on plate fully aligned"] = all_genes_stats["all_targeted_full"] / all_genes_stats[
+        "all_targeted_on_plate"]
     all_genes_stats.to_csv(genes_found_file, index=False)
     sns.set_theme(style="whitegrid", font_scale=1.5)
-    plt.figure(figsize=(20,14))
-    g = sns.barplot(data = all_genes_stats, x = "plate", y = "% on plate fully aligned", hue="aligned_to")
+    plt.figure(figsize=(20, 14))
+    g = sns.barplot(data=all_genes_stats, x="plate", y="% on plate fully aligned", hue="aligned_to")
     plt.xticks(rotation=90, fontsize=15)
     plt.yticks(fontsize=15)
     plt.ylabel("all the fully aligned unique ORFs", fontsize=15)
@@ -176,39 +183,39 @@ def variants_main(arguments):
     plt.savefig(os.path.join(output, "./perc_full_matched.png"))
     plt.close()
 
-    # compare genes in all the targeted space (ORFs) vs all fully aligned 
+    # compare genes in all the targeted space (ORFs) vs all fully aligned
     all_targeted_unique_db = orfs["ORF_NAME_NODASH"].dropna().unique()
     all_found = pd.read_csv(all_summary)
     all_found["gene_name"] = all_found["gene_name"].replace("-", "")
     all_found_genes = all_found["gene_name"].dropna().unique()
-    venn2([set(all_targeted_unique_db), set(all_found_genes)], set_labels = ("all ORFs", "all_fully_aligned"))
+    venn2([set(all_targeted_unique_db), set(all_found_genes)], set_labels=("all ORFs", "all_fully_aligned"))
     plt.savefig(os.path.join(output, "./allORFs_venn.png"))
     plt.close()
 
     # HIP subset
-    all_HIP_targeted = orfs[orfs["db"] == "HIP"]["ORF_NAME_NODASH"].dropna().unique() 
+    all_HIP_targeted = orfs[orfs["db"] == "HIP"]["ORF_NAME_NODASH"].dropna().unique()
     all_found_hip = all_found[all_found["db"] == "HIP"]
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all HIP ORFs", "all_fully_aligned"))
+    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all HIP ORFs", "all_fully_aligned"))
     plt.savefig(os.path.join(output, "./HIPORFs_venn.png"))
     plt.close()
 
     # SGD subset
-    all_HIP_targeted = orfs[orfs["db"] == "SGD"]["ORF_NAME_NODASH"].dropna().unique() 
+    all_HIP_targeted = orfs[orfs["db"] == "SGD"]["ORF_NAME_NODASH"].dropna().unique()
     all_found_hip = all_found[all_found["db"] == "SGD"]
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all SGD ORFs", "all_fully_aligned"))
+    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all SGD ORFs", "all_fully_aligned"))
     plt.savefig(os.path.join(output, "./SGDORFs_venn.png"))
     plt.close()
 
     # PROTGEN subset
-    all_HIP_targeted = orfs[orfs["db"] == "PROTGEN"]["ORF_NAME_NODASH"].dropna().unique() 
+    all_HIP_targeted = orfs[orfs["db"] == "PROTGEN"]["ORF_NAME_NODASH"].dropna().unique()
     all_found_hip = all_found[all_found["db"] == "PROTGEN"]
     all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
     all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels = ("all PROTGEN ORFs", "all_fully_aligned"))
+    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all PROTGEN ORFs", "all_fully_aligned"))
     plt.savefig(os.path.join(output, "./PROTORFs_venn.png"))
     plt.close()
 
