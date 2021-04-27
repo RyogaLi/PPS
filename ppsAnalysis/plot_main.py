@@ -29,13 +29,15 @@ class PlotObj(object):
         :return:
         """
         all_summary = os.path.join(self._dir, "all_mutations.csv")
+        all_found = pd.read_csv(all_summary)
+        all_found["gene_name"] = all_found["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
         # HIP subset
         all_HIP_targeted = orfs[orfs["db"] == "HIP"]["ORF_NAME_NODASH"].dropna().unique()
         all_found_hip = all_found[all_found["db"] == "HIP"]
         all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
         all_found_genes = all_found_hip["gene_name"].dropna().unique()
         venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all HIP ORFs", "all_fully_aligned"))
-        plt.savefig(os.path.join(self._dir, "./HIPORFs_venn.png"))
+        plt.savefig(os.path.join(self._dir, "./variants_HIPORFs_venn.png"))
         plt.close()
 
         # SGD subset
@@ -44,7 +46,7 @@ class PlotObj(object):
         all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
         all_found_genes = all_found_hip["gene_name"].dropna().unique()
         venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all SGD ORFs", "all_fully_aligned"))
-        plt.savefig(os.path.join(self._dir, "./SGDORFs_venn.png"))
+        plt.savefig(os.path.join(self._dir, "./variants_SGDORFs_venn.png"))
         plt.close()
 
         # PROTGEN subset
@@ -53,7 +55,7 @@ class PlotObj(object):
         all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
         all_found_genes = all_found_hip["gene_name"].dropna().unique()
         venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all PROTGEN ORFs", "all_fully_aligned"))
-        plt.savefig(os.path.join(self._dir, "./PROTORFs_venn.png"))
+        plt.savefig(os.path.join(self._dir, "./variants_PROTORFs_venn.png"))
         plt.close()
 
     def make_venn(self, orfs):
@@ -144,7 +146,7 @@ class PlotObj(object):
         plt.legend(fontsize=29)
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "full_with_variants_barplot.png"))
-
+        plt.close()
 def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     """
     Join HIP data and other data into one df, remove unwanted columns
@@ -170,6 +172,7 @@ def plot_main(inputdir):
     other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
     orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
     plot_obj.make_fully_covered_withmut_bar_plot()
+    plot_obj.make_venn_variants(orfs)
     plot_obj.make_venn(orfs)
 
 if __name__ == '__main__':

@@ -91,9 +91,15 @@ class yeastAnalysis(object):
                     except:
                         continue
                     if qual < 20: continue
-                    
+                    label = ""
+                    if len(l[3]) > 1:
+                        label = "indel"
+                    elif len(l[4].split(",")) == 1 and len(l[4]) > 1:
+                        label = "indel"
+                    else:
+                        label = "SNP"
                     # track how many variants for each gene (with more than 10 reads mapped to it)
-                    mut_count.append([l[0], l[1], l[3], l[4], l[5]])
+                    mut_count.append([l[0], l[1], l[3], l[4], l[5], label])
                     filteredvcf.write(line)
         return mut_count
     
@@ -107,8 +113,6 @@ class yeastAnalysis(object):
         """
         filtered_vcf = self._rawvcf.replace("_raw", "_raw_filtered")
         mut_count_dict = {}
-        print(self._rawvcf)
-        print(filtered_vcf)
         with open(self._rawvcf, "r") as rawvcf:
             with open(filtered_vcf, "w") as filteredvcf:
                 for line in rawvcf:

@@ -149,7 +149,6 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
                 fully_covered.to_csv(fully_covered_file, index=False)
                 fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
                 db = fully_covered["db"].unique()
-                print(db)
                 stats_list.append("plateORFs")
                 genes_found.append(stats_list)
                 mut_df["plate"] = fastq_ID
@@ -246,7 +245,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
         n_mut_genes = mut_count_df["gene_ID"].unique().shape[0]
         # from fully aligned genes, select those with any mutations
         fully_aligned_with_mut = pd.merge(fully_covered, mut_count_df, how="left", left_on="gene_ID", right_on="gene_ID")
-
+        mut_count_df =  fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
         n_mut_genes_full = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
         n_mut_genes_full = n_mut_genes_full["gene_ID"].unique().shape[0]
 
