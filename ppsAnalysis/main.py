@@ -148,9 +148,12 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
                 fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
                 fully_covered.to_csv(fully_covered_file, index=False)
                 fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
+                db = fully_covered["db"].unique()
+                print(db)
                 stats_list.append("plateORFs")
                 genes_found.append(stats_list)
                 mut_df["plate"] = fastq_ID
+                mut_df["db"] = db
                 all_mut_df.append(mut_df)
             #
             # raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_subsetORFs_raw.vcf")
@@ -169,7 +172,6 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
     
     # get all the mutations
     all_mut_df = pd.concat(all_mut_df)
-    print(all_mut_df)
     # save to file
     all_mut_file = os.path.join(output, "all_mutations.csv")
     all_mut_df.to_csv(all_mut_file, index=False)
@@ -182,15 +184,6 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
     all_genes_stats["% on plate fully aligned"] = all_genes_stats["all_targeted_full"] / all_genes_stats[
         "all_targeted_on_plate"]
     all_genes_stats.to_csv(genes_found_file, index=False)
-    sns.set_theme(style="whitegrid", font_scale=1.5)
-    plt.figure(figsize=(20, 14))
-    g = sns.barplot(data=all_genes_stats, x="plate", y="% on plate fully aligned", hue="aligned_to")
-    plt.xticks(rotation=90, fontsize=15)
-    plt.yticks(fontsize=15)
-    plt.ylabel("all the fully aligned unique ORFs", fontsize=15)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output, "./perc_full_matched.png"))
-    plt.close()
 
     # compare genes in all the targeted space (ORFs) vs all fully aligned
     all_targeted_unique_db = orfs["ORF_NAME_NODASH"].dropna().unique()
