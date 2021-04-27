@@ -76,8 +76,8 @@ def variants_main(arguments):
         if jobs_finished:
             main_logger.info("Alignment jobs all finished")
 
-        # after all alignment jobs finish, check VCF files and parse vcf files
-        parse_vcf_files(output, file_list, arguments, orfs, main_logger)
+    # after all alignment jobs finish, check VCF files and parse vcf files
+    parse_vcf_files(output, file_list, arguments, orfs, main_logger)
 
 def parse_vcf_files(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
