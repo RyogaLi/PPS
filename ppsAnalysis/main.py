@@ -153,7 +153,7 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
                 stats_list.append("plateORFs")
                 genes_found.append(stats_list)
                 mut_df["plate"] = fastq_ID
-                mut_df["db"] = db
+                mut_df["db"] = db[0]
                 all_mut_df.append(mut_df)
             #
             # raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_subsetORFs_raw.vcf")
@@ -184,43 +184,6 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
     all_genes_stats["% on plate fully aligned"] = all_genes_stats["all_targeted_full"] / all_genes_stats[
         "all_targeted_on_plate"]
     all_genes_stats.to_csv(genes_found_file, index=False)
-
-    # compare genes in all the targeted space (ORFs) vs all fully aligned
-    all_targeted_unique_db = orfs["ORF_NAME_NODASH"].dropna().unique()
-    all_found = pd.read_csv(all_summary)
-    all_found["gene_name"] = all_found["gene_name"].replace("-", "")
-    all_found_genes = all_found["gene_name"].dropna().unique()
-    venn2([set(all_targeted_unique_db), set(all_found_genes)], set_labels=("all ORFs", "all_fully_aligned"))
-    plt.savefig(os.path.join(output, "./allORFs_venn.png"))
-    plt.close()
-
-    # HIP subset
-    all_HIP_targeted = orfs[orfs["db"] == "HIP"]["ORF_NAME_NODASH"].dropna().unique()
-    all_found_hip = all_found[all_found["db"] == "HIP"]
-    all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-    all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all HIP ORFs", "all_fully_aligned"))
-    plt.savefig(os.path.join(output, "./HIPORFs_venn.png"))
-    plt.close()
-
-    # SGD subset
-    all_HIP_targeted = orfs[orfs["db"] == "SGD"]["ORF_NAME_NODASH"].dropna().unique()
-    all_found_hip = all_found[all_found["db"] == "SGD"]
-    all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-    all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all SGD ORFs", "all_fully_aligned"))
-    plt.savefig(os.path.join(output, "./SGDORFs_venn.png"))
-    plt.close()
-
-    # PROTGEN subset
-    all_HIP_targeted = orfs[orfs["db"] == "PROTGEN"]["ORF_NAME_NODASH"].dropna().unique()
-    all_found_hip = all_found[all_found["db"] == "PROTGEN"]
-    all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-    all_found_genes = all_found_hip["gene_name"].dropna().unique()
-    venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all PROTGEN ORFs", "all_fully_aligned"))
-    plt.savefig(os.path.join(output, "./PROTORFs_venn.png"))
-    plt.close()
-
 
 def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     """
