@@ -88,7 +88,7 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
                                      columns=["gene_ID", "gene_len", "total_rd", "avg_rd", "db", "count", "gene_name"])
     all_summary = os.path.join(output, "all_summary_subsetORF.csv")
     all_genes_summary.to_csv(all_summary, index=False)
-
+    all_mut_df = []
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
         if arguments.mode == "human":
@@ -144,13 +144,14 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
             raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_plateORFs_raw.vcf")
             if os.path.isfile(raw_vcf_file):
                 # analysis of ORFs aligned to subgroup
-                fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-                exit()
+                fully_covered, stats_list, mut_df = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
                 fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
                 fully_covered.to_csv(fully_covered_file, index=False)
                 fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
                 stats_list.append("plateORFs")
                 genes_found.append(stats_list)
+                mut_df["plate"] = fastq_ID
+                all_mut_df.append(mut_df)
             #
             # raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_subsetORFs_raw.vcf")
             # if not os.path.isfile(raw_vcf_file):
@@ -165,11 +166,17 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log.to_csv(all_log_file, index=False)
-
+    
+    # get all the mutations
+    all_mut_df = pd.concat(all_mut_df)
+    print(all_mut_df)
+    # save to file
+    all_mut_file = os.path.join(output, "all_mutations.csv")
+    all_mut_df.to_csv(all_mut_file, index=False)
     # process summary of number of genes found in each sample
     all_genes_stats = pd.DataFrame(genes_found, columns=["plate", "fully_aligned", "all_genes_found",
                                                          "all_targeted_on_plate", "all_targeted_full",
-                                                         "n_genes_with_any_mut", "n_ref", "aligned_to"])
+                                                         "n_fully_aligned_genes_with_any_mut", "n_ref", "aligned_to"])
     genes_found_file = os.path.join(output, "genes_stats.csv")
 
     all_genes_stats["% on plate fully aligned"] = all_genes_stats["all_targeted_full"] / all_genes_stats[
@@ -267,12 +274,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     fully_covered["db"] = fully_covered["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")
     fully_covered["count"] = fully_covered["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")
     fully_covered["gene_name"] = fully_covered["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
-    # filter vcf based on QUAL and DP
-    mut_count_dict = analysis.filter_vcf()
-    gene_mut_count = pd.DataFrame.from_dict(mut_count_dict, orient='index').reset_index()
-    gene_mut_count.columns = ["gene_name", "n_variants"]
-    n_mut_genes = len(mut_count_dict)
-
+    
     # merge with target orfs
     merged_df = pd.merge(orfs_df, fully_covered, how="left", left_on="orf_name", right_on="gene_ID")
     # merged_file = os.path.join(sub_output, "merged_with_targets.csv")
@@ -280,9 +282,27 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     # merged_df.to_csv(all_summary, mode="a", index=False, header=False)
     n_targeted = orfs_df.shape[0]
     n_targeted_full = merged_df[~merged_df["gene_ID"].isnull()].shape[0]
-    stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full,n_mut_genes, n_ref]
+    # filter vcf based on QUAL and DP
+    mut_count = analysis.filter_vcf()
+    if not mut_count == []:
+        mut_count_df = pd.DataFrame(mut_count)
+        mut_count_df.columns = ["gene_ID", "pos", "ref", "alt", "qual"]
+        n_mut_genes = mut_count_df["gene_ID"].unique().shape[0]
+        # from fully aligned genes, select those with any mutations
+        fully_aligned_with_mut = pd.merge(fully_covered, mut_count_df, how="left", left_on="gene_ID", right_on="gene_ID")
 
-    test_raw_filter = analysis.filter_full_vcf()
+        n_mut_genes_full = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
+        n_mut_genes_full = n_mut_genes_full["gene_ID"].unique().shape[0]
+
+    else: 
+        mut_count_df = pd.DataFrame({}, ["gene_ID", "pos", "ref", "alt", "qual"])
+        n_mut_genes = 0
+        n_mut_genes_full = 0
+
+    # from fully aligned genes, select those with any mutations
+    stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_mut_genes_full, n_ref]
+
+    #test_raw_filter = analysis.filter_full_vcf()
     # # merge with ref to get gene len
     # ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
     # ref.columns = ["gene_name", "gene_len"]
@@ -296,7 +316,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     # target_gene_mut_file = os.path.join(sub_output, "target_gene_mutcount.csv")
     # target_gene_mut_count.to_csv(target_gene_mut_file, index=False)
 
-    return fully_covered, stats_list
+    return fully_covered, stats_list, mut_count_df
 
 def check_args(arguments):
     """
