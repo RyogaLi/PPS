@@ -79,6 +79,7 @@ def variants_main(arguments):
     # after all alignment jobs finish, check VCF files and parse vcf files
     parse_vcf_files(output, file_list, arguments, orfs, main_logger)
 
+
 def parse_vcf_files(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
@@ -122,42 +123,43 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
         else:  # yeast
             # first get the genes that are fully covered in the fastq files
             orfs_df = orfs[orfs["plate"] == fastq_ID]
-            raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allORFs_raw.vcf")
-            if os.path.isfile(raw_vcf_file):
-                # analysis of ORFs aligned to all ref + backbone
-                fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-                fully_covered_file = os.path.join(sub_output, "fully_covered_allORFs.csv")
-                fully_covered.to_csv(fully_covered_file, index=False)
-                stats_list.append("allORFs")
-                genes_found.append(stats_list)
-
-            raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allwithbackbone_raw.vcf")
-            if os.path.isfile(raw_vcf_file):
-                # analysis of ORFs aligned to all ref
-                fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-                fully_covered_file = os.path.join(sub_output, "fully_covered_allwithbackbone.csv")
-                fully_covered.to_csv(fully_covered_file, index=False)
-                stats_list = stats_list.append("allwithbackbone")
-                genes_found.append(stats_list)
+            # raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allORFs_raw.vcf")
+            # if os.path.isfile(raw_vcf_file):
+            #     # analysis of ORFs aligned to all ref + backbone
+            #     fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+            #     fully_covered_file = os.path.join(sub_output, "fully_covered_allORFs.csv")
+            #     fully_covered.to_csv(fully_covered_file, index=False)
+            #     stats_list.append("allORFs")
+            #     genes_found.append(stats_list)
+            #
+            # raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allwithbackbone_raw.vcf")
+            # if os.path.isfile(raw_vcf_file):
+            #     # analysis of ORFs aligned to all ref
+            #     fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+            #     fully_covered_file = os.path.join(sub_output, "fully_covered_allwithbackbone.csv")
+            #     fully_covered.to_csv(fully_covered_file, index=False)
+            #     stats_list = stats_list.append("allwithbackbone")
+            #     genes_found.append(stats_list)
 
             raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_plateORFs_raw.vcf")
             if os.path.isfile(raw_vcf_file):
                 # analysis of ORFs aligned to subgroup
                 fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+                exit()
                 fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
                 fully_covered.to_csv(fully_covered_file, index=False)
                 fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
                 stats_list.append("plateORFs")
                 genes_found.append(stats_list)
-
-            raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_subsetORFs_raw.vcf")
-            if not os.path.isfile(raw_vcf_file):
-                # analysis of ORFs aligned to plate
-                fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-                fully_covered_file = os.path.join(sub_output, "fully_covered_subsetORFs.csv")
-                fully_covered.to_csv(fully_covered_file, index=False)
-                stats_list.append("subsetORFs")
-                genes_found.append(stats_list)
+            #
+            # raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_subsetORFs_raw.vcf")
+            # if not os.path.isfile(raw_vcf_file):
+            #     # analysis of ORFs aligned to plate
+            #     fully_covered, stats_list = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+            #     fully_covered_file = os.path.join(sub_output, "fully_covered_subsetORFs.csv")
+            #     fully_covered.to_csv(fully_covered_file, index=False)
+            #     stats_list.append("subsetORFs")
+            #     genes_found.append(stats_list)
 
     # process all log
     all_log = pd.DataFrame(all_log)
@@ -280,6 +282,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     n_targeted_full = merged_df[~merged_df["gene_ID"].isnull()].shape[0]
     stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full,n_mut_genes, n_ref]
 
+    test_raw_filter = analysis.filter_full_vcf()
     # # merge with ref to get gene len
     # ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
     # ref.columns = ["gene_name", "gene_len"]
