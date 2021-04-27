@@ -91,7 +91,6 @@ class yeastAnalysis(object):
                     except:
                         continue
                     if qual < 20: continue
-                    label = ""
                     if len(l[3]) > 1:
                         label = "indel"
                     elif len(l[4].split(",")) == 1 and len(l[4]) > 1:
