@@ -67,13 +67,15 @@ class Alignment(object):
                      f"{bam_file.replace('.bam', '_sorted.bai')}\n")
             # create vcf alignment output
             # first pileup the reads with bcftools mpileup
-            sh.write(f"bcftools mpileup -f {reference}.fasta {bam_file.replace('.bam', '_sorted.bam')} >"
+            sh.write(f"bcftools mpileup --annotate FORMAT/AD,FORMAT/ADF,FORMAT/ADR,FORMAT/DP,FORMAT/SP,INFO/AD,"
+                     f"INFO/ADF,INFO/ADR -f {reference}.fasta {bam_file.replace('.bam', '_sorted.bam')} >"
                      f" {bam_file.replace('.bam', '_raw.bcf')}\n")
             # then convert to vcf files
             sh.write(f"bcftools view -u {bam_file.replace('.bam', '_raw.bcf')} > {bam_file.replace('.bam', '_raw.vcf')}\n")
             
             # get vcf file with variants only
-            sh.write(f"bcftools call -cAv --ploidy 1 {bam_file.replace('.bam', '_raw.bcf')} > {bam_file.replace('.bam', '_variants.vcf')}\n\n")
+            sh.write(f"bcftools call -mAv --ploidy 1 {bam_file.replace('.bam', '_raw.bcf')} >"
+                     f" {bam_file.replace('.bam', '_variants.vcf')}\n\n")
             # # convert sam file to a sorted bam file out put from samtools are save in corresponding log files, sterr
             # sh.write(f"samtools view -bS {r2_sam_file} > {r2_bam_file}\n")
             # sh.write(f"samtools sort {r2_bam_file} -o {r2_bam_file.replace('.bam', '_sorted.bam')}\n")
@@ -101,7 +103,7 @@ class Alignment(object):
             # for each plate, align to all_orfs, plate_orfs, subset_orfs
             # all orfs
             all_orfs = os.path.join(self._ref_dir, "all_seq")
-            all_orfs_backbone = os.path.join(self._ref_dir, "all_seq_backbone")
+            #all_orfs_backbone = os.path.join(self._ref_dir, "all_seq_backbone")
             plate_orfs = os.path.join(self._ref_dir, self._basename)
             regexp = re.compile(r"Sup0[1-3]")
             if "HIP" in self._basename:
@@ -116,7 +118,7 @@ class Alignment(object):
             sub_set_orfs = ""
             exit()
         # align this sample to all ORFs
-        self._align(all_orfs_backbone, "_allwithbackbone")
+        #self._align(all_orfs_backbone, "_allwithbackbone")
         self._align(all_orfs, "_allORFs")
         self._align(plate_orfs, "_plateORFs")
         self._align(sub_set_orfs, "_subsetORFs")
