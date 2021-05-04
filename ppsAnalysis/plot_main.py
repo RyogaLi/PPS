@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
-from matplotlib_venn import venn2, venn2_circles, venn2_unweighted
+from matplotlib_venn import venn2, venn2_circles, venn2_unweighted, venn3, venn3_circles
 
 class PlotObj(object):
 
@@ -21,42 +21,6 @@ class PlotObj(object):
         :param inputdir: input directory contains all the output files from the server
         """
         self._dir = inputdir
-
-    def make_venn_variants(self, orfs):
-        """
-
-        :param orfs:
-        :return:
-        """
-        all_summary = os.path.join(self._dir, "all_mutations.csv")
-        all_found = pd.read_csv(all_summary)
-        all_found["gene_name"] = all_found["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
-        # HIP subset
-        all_HIP_targeted = orfs[orfs["db"] == "HIP"]["ORF_NAME_NODASH"].dropna().unique()
-        all_found_hip = all_found[all_found["db"] == "HIP"]
-        all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-        all_found_genes = all_found_hip["gene_name"].dropna().unique()
-        venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all HIP ORFs", "all_fully_aligned"))
-        plt.savefig(os.path.join(self._dir, "./variants_HIPORFs_venn.png"))
-        plt.close()
-
-        # SGD subset
-        all_HIP_targeted = orfs[orfs["db"] == "SGD"]["ORF_NAME_NODASH"].dropna().unique()
-        all_found_hip = all_found[all_found["db"] == "SGD"]
-        all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-        all_found_genes = all_found_hip["gene_name"].dropna().unique()
-        venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all SGD ORFs", "all_fully_aligned"))
-        plt.savefig(os.path.join(self._dir, "./variants_SGDORFs_venn.png"))
-        plt.close()
-
-        # PROTGEN subset
-        all_HIP_targeted = orfs[orfs["db"] == "PROTGEN"]["ORF_NAME_NODASH"].dropna().unique()
-        all_found_hip = all_found[all_found["db"] == "PROTGEN"]
-        all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-        all_found_genes = all_found_hip["gene_name"].dropna().unique()
-        venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all PROTGEN ORFs", "all_fully_aligned"))
-        plt.savefig(os.path.join(self._dir, "./variants_PROTORFs_venn.png"))
-        plt.close()
 
     def make_venn(self, orfs):
         """
@@ -77,27 +41,65 @@ class PlotObj(object):
         all_HIP_targeted = orfs[orfs["db"] == "HIP"]["ORF_NAME_NODASH"].dropna().unique()
         all_found_hip = all_found[all_found["db"] == "HIP"]
         all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-        all_found_genes = all_found_hip["gene_name"].dropna().unique()
-        venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all HIP ORFs", "all_fully_aligned"))
+        all_found_genes_hip = all_found_hip["gene_name"].dropna().unique()
+        venn2([set(all_HIP_targeted), set(all_found_genes_hip)], set_labels=("all HIP ORFs", "all_fully_aligned"))
         plt.savefig(os.path.join(self._dir, "./HIPORFs_venn.png"))
         plt.close()
 
         # SGD subset
-        all_HIP_targeted = orfs[orfs["db"] == "SGD"]["ORF_NAME_NODASH"].dropna().unique()
+        all_SGD_targeted = orfs[orfs["db"] == "SGD"]["ORF_NAME_NODASH"].dropna().unique()
         all_found_hip = all_found[all_found["db"] == "SGD"]
         all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-        all_found_genes = all_found_hip["gene_name"].dropna().unique()
-        venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all SGD ORFs", "all_fully_aligned"))
+        all_found_genes_sgd = all_found_hip["gene_name"].dropna().unique()
+        venn2([set(all_SGD_targeted), set(all_found_genes_sgd)], set_labels=("all SGD ORFs", "all_fully_aligned"))
         plt.savefig(os.path.join(self._dir, "./SGDORFs_venn.png"))
         plt.close()
 
         # PROTGEN subset
-        all_HIP_targeted = orfs[orfs["db"] == "PROTGEN"]["ORF_NAME_NODASH"].dropna().unique()
+        all_PROT_targeted = orfs[orfs["db"] == "PROTGEN"]["ORF_NAME_NODASH"].dropna().unique()
         all_found_hip = all_found[all_found["db"] == "PROTGEN"]
         all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-        all_found_genes = all_found_hip["gene_name"].dropna().unique()
-        venn2([set(all_HIP_targeted), set(all_found_genes)], set_labels=("all PROTGEN ORFs", "all_fully_aligned"))
+        all_found_genes_prot = all_found_hip["gene_name"].dropna().unique()
+        venn2([set(all_PROT_targeted), set(all_found_genes_prot)], set_labels=("all PROTGEN ORFs", "all_fully_aligned"))
         plt.savefig(os.path.join(self._dir, "./PROTORFs_venn.png"))
+        plt.close()
+
+        all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
+        all_mut = pd.read_csv(all_mut_summary)
+        all_mut["gene_name"] = all_mut["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
+        all_mut_hip = all_mut[all_mut["db"] == "HIP"]
+        all_mut_hip["gene_name"] = all_mut_hip["gene_name"].replace("-", "")
+        all_mut_hip_genes = all_mut_hip["gene_name"].dropna().unique()
+
+        venn3([set(all_HIP_targeted), set(all_found_genes_hip), set(all_mut_hip_genes)], set_labels=("all HIP ORFs",
+                                                                                                 "fully aligned",
+                                                                                                 "fully aligned with "
+                                                                                                 "mut"))
+        venn3_circles([set(all_HIP_targeted), set(all_found_genes_hip), set(all_mut_hip_genes)], linestyle='dashed', linewidth=1, color="grey")
+        plt.savefig(os.path.join(self._dir, "./HIPORFs_venn3.png"))
+        plt.close()
+
+
+        all_mut_sgd = all_mut[all_mut["db"] == "SGD"]
+        all_mut_sgd["gene_name"] = all_mut_sgd["gene_name"].replace("-", "")
+        all_mut_sgd_genes = all_mut_sgd["gene_name"].dropna().unique()
+
+        venn3([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_mut_sgd_genes)], set_labels=("all SGD ORFs",
+                                                                                                 "fully aligned",
+                                                                                                 "fully aligned with "
+                                                                                                 "mut"))
+        plt.savefig(os.path.join(self._dir, "./SGDORFs_venn3.png"))
+        plt.close()
+
+        all_mut_prot = all_mut[all_mut["db"] == "PROTGEN"]
+        all_mut_prot["gene_name"] = all_mut_prot["gene_name"].replace("-", "")
+        all_mut_prot_genes = all_mut_prot["gene_name"].dropna().unique()
+        venn3([set(all_PROT_targeted), set(all_found_genes_prot), set(all_mut_prot_genes)], set_labels=("all PROT "
+                                                                                                        "ORFs",
+                                                                                                 "fully aligned",
+                                                                                                 "fully aligned with "
+                                                                                                 "mut"))
+        plt.savefig(os.path.join(self._dir, "./PROTORFs_venn3.png"))
         plt.close()
 
     def make_fully_covered_bar_plot(self):
@@ -172,7 +174,7 @@ def plot_main(inputdir):
     other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
     orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
     plot_obj.make_fully_covered_withmut_bar_plot()
-    plot_obj.make_venn_variants(orfs)
+    # plot_obj.make_venn_variants(orfs)
     plot_obj.make_venn(orfs)
 
 if __name__ == '__main__':
