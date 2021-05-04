@@ -112,16 +112,20 @@ class Alignment(object):
                 sub_set_orfs = os.path.join(self._ref_dir, "PROTGEN_all")
             else:
                 sub_set_orfs = os.path.join(self._ref_dir, "SGD_all")
+
+            # align this sample to all ORFs
+            # self._align(all_orfs_backbone, "_allwithbackbone")
+            self._align(all_orfs, "_allORFs")
+            self._align(plate_orfs, "_plateORFs")
+            self._align(sub_set_orfs, "_subsetORFs")
         else:
-            all_orfs =""
-            plate_orfs = ""
-            sub_set_orfs = ""
-            exit()
-        # align this sample to all ORFs
-        #self._align(all_orfs_backbone, "_allwithbackbone")
-        self._align(all_orfs, "_allORFs")
-        self._align(plate_orfs, "_plateORFs")
-        self._align(sub_set_orfs, "_subsetORFs")
+            all_orfs = os.path.join(self._ref_dir, "all_seq_human")
+            # get group name for this sample
+            group_name = ""
+            group_spec_orfs = os.path.join(self._ref_dir, f"group_ref_{group_name}")
+            self._align(all_orfs, "_all_orfs")
+            self._align(group_spec_orfs, "_group_spec_orfs")
+
 
         os.system(f"chmod 755 {self._sh_file}")
         # submit this to the cluster
