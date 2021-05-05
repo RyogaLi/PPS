@@ -18,6 +18,7 @@ import seaborn as sns
 import ppsAnalysis.alignment
 import ppsAnalysis.cluster
 import ppsAnalysis.yeast_variant_analysis
+import ppsAnalysis.human_variant_analysis
 import ppsAnalysis.logthis
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn2, venn2_circles, venn2_unweighted
@@ -115,21 +116,23 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         all_log["fastq_ID"] += [fastq_ID] * 2
 
         # for each vcf file, get how many genes are fully aligned
-        orfs_df = orfs[orfs["plate"] == fastq_ID]
+        # get only the subset that are in the group 
+        group_ID = fastq_ID.split("_")[-1][-1]
+        orfs_df = orfs[orfs["Pool group #"] == int(group_ID)]
+        print(orfs_df)
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
-            fully_covered, stats_list, mut_df = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+            fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df)
             fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
+            print(fully_covered)
             fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
-            db = fully_covered["db"].unique()
             stats_list.append("groupSpecORFs")
             genes_found.append(stats_list)
-            mut_df["plate"] = fastq_ID
-            mut_df["db"] = db[0]
+            mut_df["sample"] = fastq_ID
             all_mut_df.append(mut_df)
-
+        exit()
 
 def parse_vcf_files_yeast(output, file_list, orfs, logger):
     # for each sample, parse vcf files
@@ -198,6 +201,7 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
         "all_targeted_on_plate"]
     all_genes_stats.to_csv(genes_found_file, index=False)
 
+
 def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     """
     Join HIP data and other data into one df, remove unwanted columns
@@ -222,7 +226,21 @@ def read_human_csv(human91_ORFs):
     humanallORF = pd.read_csv(human91_ORFs)
     humanallORF = humanallORF[['orf_id', 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified',
                                 '# mut']]
+    humanallORF = humanallORF.fillna(-1)
+    humanallORF["entrez_gene_id"] = humanallORF["entrez_gene_id"].astype(int)
+    humanallORF['orf_name'] = humanallORF['orf_id'].astype(str) + "_" + humanallORF['entrez_gene_id'].astype(str) + "_G0" + humanallORF['Pool group #'].astype(str) + "_" + humanallORF['entrez_gene_symbol'].astype(str)  
+
     return humanallORF
+
+
+def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
+    """
+    """
+    analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df)
+    full_cover_genes, gene_dict, ref_dict = analysis.get_full_cover()
+
+    return fully_covered, stats_list, mut_count_df
+
 
 
 def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
