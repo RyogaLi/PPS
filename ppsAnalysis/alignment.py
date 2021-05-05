@@ -124,7 +124,9 @@ class Alignment(object):
             match = re.search(".+(G[0-9]+)", self._basename)
             if match:
                 group_name = match.group(1)
-
+            else:
+                print(self._basename)
+                raise ValueError("no group ID specified")
             group_spec_orfs = os.path.join(self._ref_dir, f"group_ref_{group_name}")
             self._align(all_orfs, "_all_orfs")
             self._align(group_spec_orfs, "_group_spec_orfs")

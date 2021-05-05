@@ -76,33 +76,29 @@ def variants_main(arguments):
         if jobs_finished:
             main_logger.info("Alignment jobs all finished")
 
-    # after all alignment jobs finish, check VCF files and parse vcf files
-    parse_vcf_files(output, file_list, arguments, orfs, main_logger)
+    if arguments.mode == "human":
+        # after all alignment jobs finish, check VCF files and parse vcf files
+        parse_vcf_files_human(output, file_list, arguments, orfs, main_logger)
+    elif arguments.mode == "yeast":
+        # after all alignment jobs finish, check VCF files and parse vcf files
+        parse_vcf_files_yeast(output, file_list, orfs, main_logger)
 
-
-def parse_vcf_files(output, file_list, arguments, orfs, logger):
+def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
     all_genes_summary = pd.DataFrame([],
-                                     columns=["gene_ID", "gene_len", "total_rd", "avg_rd", "db", "count", "gene_name"])
+                                     columns=["gene_ID", "gene_len", "db", "count", "gene_name"])
     all_summary = os.path.join(output, "all_summary_subsetORF.csv")
     all_genes_summary.to_csv(all_summary, index=False)
     all_mut_df = []
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
-        if arguments.mode == "human":
-            # extract ID
-            fastq_ID = f.split("-")[-2]
-        elif arguments.mode == "yeast":
-            fastq_ID = f.split("_")[0]
-        else:
-            raise ValueError("Wrong mode")
+        fastq_ID = f.split(".")[0]
         sub_output = os.path.join(os.path.abspath(output), fastq_ID)
 
         # there should be only one log file in the dir
         log_file = glob.glob(f"{sub_output}/*.log")[0]
-
         if not os.path.isfile(log_file):
             logger.warning(f"log file does not exist: {log_file}")
             continue
@@ -115,27 +111,72 @@ def parse_vcf_files(output, file_list, arguments, orfs, logger):
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
+        all_log["fastq_ID"] += [fastq_ID] * 2
+
+        # for each vcf file, get how many genes are fully aligned
+        # todo change this orfs to human orfs
+        orfs_df = orfs[orfs["plate"] == fastq_ID]
+        raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
+        if os.path.isfile(raw_vcf_file):
+            # analysis of ORFs aligned to group specific reference
+            fully_covered, stats_list, mut_df = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+            fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
+            fully_covered.to_csv(fully_covered_file, index=False)
+            fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
+            db = fully_covered["db"].unique()
+            stats_list.append("groupSpecORFs")
+            genes_found.append(stats_list)
+            mut_df["plate"] = fastq_ID
+            mut_df["db"] = db[0]
+            all_mut_df.append(mut_df)
+
+
+def parse_vcf_files_yeast(output, file_list, orfs, logger):
+    # for each sample, parse vcf files
+    all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
+    genes_found = []
+    all_genes_summary = pd.DataFrame([],
+                                     columns=["gene_ID", "gene_len", "db", "count", "gene_name"])
+    all_summary = os.path.join(output, "all_summary_subsetORF.csv")
+    all_genes_summary.to_csv(all_summary, index=False)
+    all_mut_df = []
+    for f in file_list:
+        if not f.endswith(".fastq.gz"): continue
+        fastq_ID = f.split("_")[0]
+        sub_output = os.path.join(os.path.abspath(output), fastq_ID)
+
+        # there should be only one log file in the dir
+        log_file = glob.glob(f"{sub_output}/*.log")[0]
+        if not os.path.isfile(log_file):
+            logger.warning(f"log file does not exist: {log_file}")
+            continue
+
+        # get information from the log file to make a summary log file for all the samples
+        with open(log_file, "r") as log_f:
+            for line in log_f:
+                if "reads;" in line:
+                    n_reads = line.split(" ")[0]
+                    all_log["reads"].append(n_reads)
+                if "alignment rate" in line:
+                    perc_aligned = line.split("%")[0]
+                    all_log["map_perc"].append(perc_aligned)
+
         all_log["fastq_ID"] += [fastq_ID] * 3
         # for each vcf file, get how many genes are fully aligned
-        if arguments.mode == "human":
-            # extract ID
-            pass
-        else:  # yeast
-            # first get the genes that are fully covered in the fastq files
-            orfs_df = orfs[orfs["plate"] == fastq_ID]
-            raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_plateORFs_raw.vcf")
-            if os.path.isfile(raw_vcf_file):
-                # analysis of ORFs aligned to subgroup
-                fully_covered, stats_list, mut_df = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-                fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
-                fully_covered.to_csv(fully_covered_file, index=False)
-                fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
-                db = fully_covered["db"].unique()
-                stats_list.append("plateORFs")
-                genes_found.append(stats_list)
-                mut_df["plate"] = fastq_ID
-                mut_df["db"] = db[0]
-                all_mut_df.append(mut_df)
+        orfs_df = orfs[orfs["plate"] == fastq_ID]
+        raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_plateORFs_raw.vcf")
+        if os.path.isfile(raw_vcf_file):
+            # analysis of ORFs aligned to subgroup
+            fully_covered, stats_list, mut_df = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+            fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
+            fully_covered.to_csv(fully_covered_file, index=False)
+            fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
+            db = fully_covered["db"].unique()
+            stats_list.append("plateORFs")
+            genes_found.append(stats_list)
+            mut_df["plate"] = fastq_ID
+            mut_df["db"] = db[0]
+            all_mut_df.append(mut_df)
 
     # process all log
     all_log = pd.DataFrame(all_log)
@@ -175,6 +216,13 @@ def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     #other_ORFs['plate'] = 'scORFeome-' + other_ORFs['plate'].astype(str)
     combined = pd.concat([HIP_df, other_ORFs], axis=0, ignore_index=True)
     return combined
+
+
+def read_human_csv(human91_ORFs):
+    humanallORF = pd.read_csv(human91_ORFs)
+    humanallORF = human91_ORFs[['orf_id', 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified',
+                                '# mut']]
+    return humanallORF
 
 
 def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
