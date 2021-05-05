@@ -83,6 +83,7 @@ def variants_main(arguments):
         # after all alignment jobs finish, check VCF files and parse vcf files
         parse_vcf_files_yeast(output, file_list, orfs, main_logger)
 
+
 def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
@@ -114,7 +115,6 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         all_log["fastq_ID"] += [fastq_ID] * 2
 
         # for each vcf file, get how many genes are fully aligned
-        # todo change this orfs to human orfs
         orfs_df = orfs[orfs["plate"] == fastq_ID]
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
@@ -220,7 +220,7 @@ def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
 
 def read_human_csv(human91_ORFs):
     humanallORF = pd.read_csv(human91_ORFs)
-    humanallORF = human91_ORFs[['orf_id', 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified',
+    humanallORF = humanallORF[['orf_id', 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified',
                                 '# mut']]
     return humanallORF
 
@@ -319,9 +319,10 @@ def check_args(arguments):
         other_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/other_targeted_ORFs.csv"
         orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
     elif arguments.mode == "human":
-        orfs =""
+        human_91ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/20161117_ORFeome91_seqs.csv"
+        orfs = read_human_csv(human_91ORFs)
     else:
-        exit()
+        raise ValueError("Please provide valid mode")
 
     return orfs
 
