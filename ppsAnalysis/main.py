@@ -235,11 +235,32 @@ def read_human_csv(human91_ORFs):
 
 def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
     """
+
     """
     analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df)
     full_cover_genes, gene_dict, ref_dict = analysis.get_full_cover()
 
-    return fully_covered, stats_list, mut_count_df
+    # all the genes with full coverage
+    n_fully_aligned = len(full_cover_genes.keys())
+    # all genes in ref fasta
+    n_ref = len(ref_dict.keys())
+    # all genes found in this fastq file
+    n_all_found = len(gene_dict.keys())
+
+    # save all the genes that are fully covered to the output folder
+    fully_covered = pd.DataFrame.from_dict(full_cover_genes, orient='index').reset_index()
+    fully_covered.columns = ["gene_ID", "gene_len"]
+
+    # merge with target orfs
+    merged_df = pd.merge(orfs_df, fully_covered, how="left", left_on="orf_name", right_on="gene_ID")
+
+    n_targeted = orfs_df.shape[0]
+    n_targeted_full = merged_df[~merged_df["gene_ID"].isnull()].shape[0]
+
+    # from fully aligned genes, select those with any mutations
+    stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_ref]
+    print(stats_list)
+    return fully_covered, stats_list
 
 
 
@@ -260,7 +281,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
 
     # save all the genes that are fully covered to the output folder
     fully_covered = pd.DataFrame.from_dict(full_cover_genes, orient='index').reset_index()
-    fully_covered.columns = ["gene_ID", "gene_len", "total_rd", "avg_rd"]
+    fully_covered.columns = ["gene_ID", "gene_len"]
     # split gene ID col 
     #fully_covered["gene_ID"] = fully_covered["gene_ID"].str.replace(to_replace="-[A-G]", "A")
      

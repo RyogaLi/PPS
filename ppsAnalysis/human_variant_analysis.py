@@ -10,7 +10,7 @@ import re
 import pandas as pd
 
 
-class yeastAnalysis(object):
+class humanAnalysis(object):
 
     def __init__(self, input_vcf, basename, orfs_df):
         """
