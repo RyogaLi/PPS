@@ -149,6 +149,8 @@ class PlotObj(object):
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "full_with_variants_barplot.png"))
         plt.close()
+
+
 def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     """
     Join HIP data and other data into one df, remove unwanted columns
