@@ -79,11 +79,12 @@ class yeastAnalysis(object):
                     if "#" in line: continue
                     l = line.split()
                     # get DP for this position 
-                    match_str = "DP=([0-9]+)"
-                    m = re.search(match_str, l[7])
-                    if m:
-                        dp = int(m.group(1))
-                    if dp < 10: continue
+                    info_title = l[-2].split(":")
+                    info = l[-1].split(":")
+                    info_dict = dict(zip(info_title, info))
+                    print(info_dict)
+                    if int(info_dict["DP"]) < 10:  # informative read depth
+                        continue
 
                     # get variant call with quality > 20
                     try:
