@@ -123,16 +123,16 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
-            fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df)
+            fully_covered, stats_list = analysisHuman(raw_vcf_file, fastq_ID, orfs_df)
             fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
             print(fully_covered)
             fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
             stats_list.append("groupSpecORFs")
             genes_found.append(stats_list)
-            mut_df["sample"] = fastq_ID
-            all_mut_df.append(mut_df)
-        exit()
+            #mut_df["sample"] = fastq_ID
+            #all_mut_df.append(mut_df)
+        #exit()
 
 def parse_vcf_files_yeast(output, file_list, orfs, logger):
     # for each sample, parse vcf files

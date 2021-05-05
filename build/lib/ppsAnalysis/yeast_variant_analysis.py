@@ -47,23 +47,23 @@ class yeastAnalysis(object):
                     line = line.split()
                     if gene_dict.get(line[0], -1) == -1:
                         # grep read depth information from INFO section
-                        rd = re.search("DP=([0-9]+)", line[7])
-                        rd = rd.group(1)
-                        gene_dict[line[0]] = [1, int(rd)]
+                        # rd = re.search("DP=([0-9]+)", line[7])
+                        # rd = rd.group(1)
+                        gene_dict[line[0]] = 1
                     else:
                         # grep read depth information from INFO section
-                        rd = re.search("DP=([0-9]+)", line[7])
-                        rd = rd.group(1)
-                        gene_dict[line[0]][0] += 1
-                        gene_dict[line[0]][1] += int(rd)
-            remove_genes = gene_dict.copy()
+                        # rd = re.search("DP=([0-9]+)", line[7])
+                        # rd = rd.group(1)
+                        gene_dict[line[0]] += 1
+                        # gene_dict[line[0]][1] += int(rd)
+            removed_genes = gene_dict.copy()
             for key in gene_dict.keys():
-                if gene_dict[key][0] < int(ref_dict[key]):
-                    del remove_genes[key]
-                else:
-                    avg_rd = remove_genes[key][1] / remove_genes[key][0]
-                    remove_genes[key].append(avg_rd)
-        return remove_genes, gene_dict, ref_dict
+                if gene_dict[key] < int(ref_dict[key]):
+                    del removed_genes[key]
+                # else:
+                #     avg_rd = remove_genes[key][1] / remove_genes[key][0]
+                #     remove_genes[key].append(avg_rd)
+        return removed_genes, gene_dict, ref_dict
 
     def filter_vcf(self):
         """
@@ -97,7 +97,6 @@ class yeastAnalysis(object):
                         label = "indel"
                     else:
                         label = "SNP"
-                    print(label)
                     # track how many variants for each gene (with more than 10 reads mapped to it)
                     mut_count.append([l[0], l[1], l[3], l[4], l[5], label])
                     filteredvcf.write(line)
