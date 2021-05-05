@@ -48,7 +48,7 @@ def variants_main(arguments):
             # note that fastq files and the corresponding reference file has the same id
             if arguments.mode == "human":
                 # extract ID
-                fastq_ID = f.split("-")[-2]
+                fastq_ID = f.split(".")[0]
             #    ref = arguments.ref + "orf9-1_" + fastq_ID
             elif arguments.mode == "yeast":
                 fastq_ID = f.split("_")[0]

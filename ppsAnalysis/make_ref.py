@@ -103,13 +103,14 @@ def make_human_fasta(output):
     :param ref_91: csv file contains human 9.1 reference sequences
     :return: None
     """
-    ref_91 = ""
+    ref_91 = "/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/20161117_ORFeome91_seqs.csv"
     ref_df_91 = pd.read_csv(ref_91)
+    ref_df_91 = ref_df_91.fillna(-1)
     # make all ref fasta
     all_ref_output = os.path.join(output, "all_ref_human.fasta")
     with open(all_ref_output, "w") as all_ref:
         for index, row in ref_df_91.iterrows():
-            id_line = f">{row['orf_id']}_{row['entrez_id']}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
+            id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
             seq = row["cds_seq"]+"\n"
             all_ref.write(id_line)
             all_ref.write(seq)
@@ -124,10 +125,18 @@ def make_human_fasta(output):
         subset = ref_df_91[ref_df_91["Pool group #"] == g]
         with open(group_fasta, "w") as g_fasta:
             for index, row in subset.iterrows():
-                id_line = f">{row['orf_id']}_{row['entrez_id']}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
+                id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
                 seq = row["cds_seq"] + "\n"
                 g_fasta.write(id_line)
                 g_fasta.write(seq)
+
+    # build bowtie2 index for later use 
+    all_fasta = glob.glob(f"{output}/*.fasta")
+    for f in all_fasta:
+        f_id = os.path.basename(f).split(".")[0]
+        cmd = f"bowtie2-build {f} {output}/{f_id}"
+        os.system(cmd)
+
 
 
 def main(mode, output):
@@ -138,7 +147,7 @@ def main(mode, output):
     :return: None
     """
     if mode == "human":
-        pass
+        make_human_fasta(output)
     else:
         make_yeast_fasta(output)
 

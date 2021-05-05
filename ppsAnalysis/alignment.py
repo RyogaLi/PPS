@@ -119,9 +119,12 @@ class Alignment(object):
             self._align(plate_orfs, "_plateORFs")
             self._align(sub_set_orfs, "_subsetORFs")
         else:
-            all_orfs = os.path.join(self._ref_dir, "all_seq_human")
+            all_orfs = os.path.join(self._ref_dir, "all_ref_human")
             # get group name for this sample
-            group_name = ""
+            match = re.search(".+(G[0-9]+)", self._basename)
+            if match:
+                group_name = match.group(1)
+
             group_spec_orfs = os.path.join(self._ref_dir, f"group_ref_{group_name}")
             self._align(all_orfs, "_all_orfs")
             self._align(group_spec_orfs, "_group_spec_orfs")
