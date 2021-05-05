@@ -167,7 +167,7 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
         sub_output = os.path.join(os.path.abspath(output), fastq_ID)
 
         # there should be only one log file in the dir
-        log_file = glob.glob(f"{sub_output}/*.log")[0]
+        log_file = glob.glob(f"{sub_output}/*.log")[-1]
         if not os.path.isfile(log_file):
             logger.warning(f"log file does not exist: {log_file}")
             continue
@@ -200,6 +200,7 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
             all_mut_df.append(mut_df)
 
     # process all log
+    print(all_log)
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log.to_csv(all_log_file, index=False)
@@ -318,7 +319,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     fully_covered["gene_name"] = fully_covered["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
     
     # merge with target orfs
-    merged_df = pd.merge(orfs_df, fully_covered, how="left", left_on="orf_name", right_on="gene_ID")
+    merged_df = pd.merge(orfs_df, fully_covered.drop(['db'], axis=1), how="left", left_on="orf_name", right_on="gene_ID")
     merged_df = merged_df[~merged_df["gene_ID"].isnull()]
     # merged_file = os.path.join(sub_output, "merged_with_targets.csv")
     # merged_df.to_csv(merged_file, index=False)

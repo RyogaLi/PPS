@@ -88,7 +88,6 @@ class humanAnalysis(object):
                         continue
                     if qual < 20: continue
                     # if variant have two alt, split them and use the one with the most read counts
-
                     alt_bases = l[4].split(",")
                     alt_bases = [l[3]] + alt_bases
                     AD = info_dict["AD"].split(",")
