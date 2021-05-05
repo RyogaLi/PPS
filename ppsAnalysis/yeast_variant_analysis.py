@@ -82,24 +82,37 @@ class yeastAnalysis(object):
                     info_title = l[-2].split(":")
                     info = l[-1].split(":")
                     info_dict = dict(zip(info_title, info))
-                    print(info_dict)
                     if int(info_dict["DP"]) < 10:  # informative read depth
                         continue
-
                     # get variant call with quality > 20
                     try:
                         qual = float(l[5])
                     except:
                         continue
                     if qual < 20: continue
+                    # if variant have two alt, split them and use the one with the most read counts
+                    alt_bases = l[4].split(",")
+                    alt_bases = [l[3]] + alt_bases
+                    AD = info_dict["AD"].split(",")
+                    alt_depth = dict(zip(alt_bases, AD))
+                    df = pd.DataFrame(alt_depth.items())
+                    df.columns = ["alt_base", "read_count"]
+                    df["perc"] = df["read_count"].astype(float) / float(info_dict["DP"])
+                    # select alt bases greater than 80%
+                    df = df[df["perc"] > 0.8]
+                    if df.empty:
+                        continue
+                    if l[3] in df["alt_base"].tolist():
+                        continue
+                    mut_base = df["alt_base"].tolist()[0]
                     if len(l[3]) > 1:
                         label = "indel"
-                    elif len(l[4].split(",")) == 1 and len(l[4]) > 1:
+                    elif len(mut_base) > 1:
                         label = "indel"
                     else:
                         label = "SNP"
                     # track how many variants for each gene (with more than 10 reads mapped to it)
-                    mut_count.append([l[0], l[1], l[3], l[4], l[5], label])
+                    mut_count.append([l[0], l[1], l[3], mut_base, l[5], label])
                     filteredvcf.write(line)
         return mut_count
     
