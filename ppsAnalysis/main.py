@@ -90,7 +90,7 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
     all_genes_summary = pd.DataFrame([],
-                                     columns=["gene_ID", "gene_len", "db", "count", "gene_name"])
+                                     columns=["orf_id", 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified', '# mut', 'orf_name', 'gene_ID', 'gene_len'])
     all_summary = os.path.join(output, "all_summary_subsetORF.csv")
     all_genes_summary.to_csv(all_summary, index=False)
     all_mut_df = []
@@ -156,7 +156,7 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
     # for each sample, parse vcf files
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
-    all_genes_summary = pd.DataFrame([],columns=["gene_ID", "gene_len", "db", "count", "gene_name"])
+    all_genes_summary = pd.DataFrame([],columns=["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name"])
     all_summary = os.path.join(output, "all_summary_subsetORF.csv")
     all_genes_summary.to_csv(all_summary, index=False)
     all_mut_df = []
@@ -190,9 +190,6 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
             fully_covered, stats_list, mut_df = analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
             fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
-            print(fully_covered)
-            print(fully_covered.columns)
-
             fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
             db = fully_covered["db"].unique()
             stats_list.append("plateORFs")
@@ -202,7 +199,6 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
             all_mut_df.append(mut_df)
 
     # process all log
-    print(all_log)
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log.to_csv(all_log_file, index=False)
@@ -323,6 +319,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     # merge with target orfs
     merged_df = pd.merge(orfs_df, fully_covered.drop(['db'], axis=1), how="left", left_on="orf_name", right_on="gene_ID")
     merged_df = merged_df[~merged_df["gene_ID"].isnull()]
+    merged_df = merged_df[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name"]]
     # merged_file = os.path.join(sub_output, "merged_with_targets.csv")
     # merged_df.to_csv(merged_file, index=False)
     # merged_df.to_csv(all_summary, mode="a", index=False, header=False)
