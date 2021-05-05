@@ -286,7 +286,7 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
 
     # from fully aligned genes, select those with any mutations
     stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_orf_with_v, n_ref]
-    return merged_df, stats_list, mut_df
+    return merged_df, stats_list, merge_mut
 
 
 
