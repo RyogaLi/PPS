@@ -13,7 +13,7 @@ import numpy as np
 import argparse
 from matplotlib_venn import venn2, venn2_circles, venn2_unweighted, venn3, venn3_circles
 
-class PlotObj(object):
+class PlotObjYeast(object):
 
     def __init__(self, inputdir):
         """
@@ -79,7 +79,6 @@ class PlotObj(object):
         plt.savefig(os.path.join(self._dir, "./HIPORFs_venn3.png"))
         plt.close()
 
-
         all_mut_sgd = all_mut[all_mut["db"] == "SGD"]
         all_mut_sgd["gene_name"] = all_mut_sgd["gene_name"].replace("-", "")
         all_mut_sgd_genes = all_mut_sgd["gene_name"].dropna().unique()
@@ -88,6 +87,9 @@ class PlotObj(object):
                                                                                                  "fully aligned",
                                                                                                  "fully aligned with "
                                                                                                  "mut"))
+        venn3_circles([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_mut_sgd_genes)], linestyle='dashed',
+                      linewidth=1, color="grey")
+
         plt.savefig(os.path.join(self._dir, "./SGDORFs_venn3.png"))
         plt.close()
 
@@ -99,6 +101,9 @@ class PlotObj(object):
                                                                                                  "fully aligned",
                                                                                                  "fully aligned with "
                                                                                                  "mut"))
+        venn3_circles([set(all_PROT_targeted), set(all_found_genes_prot), set(all_mut_prot_genes)], linestyle='dashed',
+                      linewidth=1, color="grey")
+
         plt.savefig(os.path.join(self._dir, "./PROTORFs_venn3.png"))
         plt.close()
 
@@ -149,6 +154,86 @@ class PlotObj(object):
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "full_with_variants_barplot.png"))
         plt.close()
+
+class PlotObjHuman(object):
+
+    def __init__(self, inputdir):
+        """
+        Initialize plot object
+        :param inputdir: input directory contains all the output files from the server
+        """
+        self._dir = inputdir
+
+    def make_fully_covered_withmut_bar_plot(self):
+        """
+
+        :return:
+        """
+        genes_found_file = os.path.join(self._dir, "genes_stats.csv")
+        all_genes_stats = pd.read_csv(genes_found_file)
+        all_genes_stats["xlabel"] = all_genes_stats["plate"].str.replace("9-1-", "")
+        perc_variant = all_genes_stats["n_fully_aligned_genes_with_any_mut"] / all_genes_stats["all_targeted_on_plate"]
+        sns.set_theme(style="whitegrid", font_scale=1.5)
+        plt.figure(figsize=(20, 14))
+        # set width of bars
+        barWidth = 0.45
+        # Set position of bar on X axis
+        r1 = np.arange(len(all_genes_stats["% in group fully aligned"]))
+        r2 = [x + barWidth for x in r1]
+
+        # Make the plot
+        plt.bar(r1, all_genes_stats["% in group fully aligned"], color='#67A7E0', width=barWidth, edgecolor='white',
+                label='% fully aligned')
+        plt.bar(r2, perc_variant, color='#FFC96F', width=barWidth, edgecolor='white', label='% fully aligned with '
+                                                                                            'variants')
+        plt.xticks(r1, labels=all_genes_stats["xlabel"].tolist(), rotation=30, fontsize=27)
+        plt.yticks(fontsize=27)
+        plt.ylabel("Fraction of targeted ORFs in each group", fontsize=30)
+        # Create legend & Show graphic
+        plt.legend(fontsize=29)
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "full_with_variants_barplot.png"))
+        plt.close()
+
+    def make_venn(self):
+        """
+
+        :return:
+        """
+        human_91 = "/Users/roujia/Documents/02_dev/04_HuRI/human ORF/20161117_ORFeome91_seqs.csv"
+        human_ORFs = read_human_csv(human_91)
+        all_summary = os.path.join(self._dir, "all_summary_subsetORF.csv")
+        # compare genes in all the targeted space (ORFs) vs all fully aligned
+        all_targeted_unique_db = human_ORFs["orf_name"].dropna().unique()
+        all_fully_aligned = pd.read_csv(all_summary)
+        all_found_genes = all_fully_aligned["orf_name"].dropna().unique()
+        venn2([set(all_targeted_unique_db), set(all_found_genes)], set_labels=("all ORFs", "all_fully_aligned"))
+        plt.savefig(os.path.join(self._dir, "./allORFs_venn.png"))
+        plt.close()
+
+        all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
+        all_mut = pd.read_csv(all_mut_summary)
+        all_mut_hip_genes = all_mut["gene_ID"].dropna().unique()
+
+        venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_hip_genes)], set_labels=("all ORFs",
+                                                                                                     "fully aligned",
+                                                                                                     "fully aligned with "
+                                                                                                     "mut"))
+        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_hip_genes)], linestyle='dashed',
+                      linewidth=1, color="black")
+        plt.savefig(os.path.join(self._dir, "./allORFs_venn3.png"))
+        plt.close()
+
+def read_human_csv(human91_ORFs):
+    humanallORF = pd.read_csv(human91_ORFs)
+    humanallORF = humanallORF[['orf_id', 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified',
+                                '# mut']]
+    humanallORF = humanallORF.fillna(-1)
+    humanallORF["entrez_gene_id"] = humanallORF["entrez_gene_id"].astype(int)
+    humanallORF['orf_name'] = humanallORF['orf_id'].astype(str) + "_" + humanallORF['entrez_gene_id'].astype(str) + "_G0" + humanallORF['Pool group #'].astype(str) + "_" + humanallORF['entrez_gene_symbol'].astype(str)
+
+    return humanallORF
+
 def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     """
     Join HIP data and other data into one df, remove unwanted columns
@@ -169,18 +254,26 @@ def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     return combined
 
 def plot_main(inputdir):
-    plot_obj = PlotObj(inputdir)
-    HIP_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/HIP_targeted_ORFs.csv"
-    other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
-    orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
-    plot_obj.make_fully_covered_withmut_bar_plot()
-    # plot_obj.make_venn_variants(orfs)
-    plot_obj.make_venn(orfs)
+    if args.m == "yeast":
+
+        plot_obj = PlotObjYeast(inputdir)
+        HIP_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/HIP_targeted_ORFs.csv"
+        other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
+        orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
+        plot_obj.make_fully_covered_withmut_bar_plot()
+        # plot_obj.make_venn_variants(orfs)
+        plot_obj.make_venn(orfs)
+
+    else:
+        plot_obj = PlotObjHuman(inputdir)
+        plot_obj.make_fully_covered_withmut_bar_plot()
+        plot_obj.make_venn()
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Plasmid pool sequencing analysis (plots)')
     parser.add_argument('-i', help='input dir')
+    parser.add_argument('-m', help='mode')
 
     args = parser.parse_args()
 
