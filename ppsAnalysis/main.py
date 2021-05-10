@@ -276,7 +276,7 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
     
     mut_df = analysis.filter_vcf()
     mut_df = pd.DataFrame(mut_df)
-    mut_df.columns = ["gene_ID", "pos", "ref", "alt", "qual", "label"]
+    mut_df.columns = ["gene_ID", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label"]
     
     # merge mut_df with fully covered
     merge_mut = pd.merge(mut_df, fully_covered, how="left", on="gene_ID")
@@ -329,7 +329,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     mut_count = analysis.filter_vcf()
     if not mut_count == []:
         mut_count_df = pd.DataFrame(mut_count)
-        mut_count_df.columns = ["gene_ID", "pos", "ref", "alt", "qual", "label"]
+        mut_count_df.columns = ["gene_ID", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label"]
         # from fully aligned genes, select those with any mutations
         fully_aligned_with_mut = pd.merge(fully_covered, mut_count_df, how="left", left_on="gene_ID", right_on="gene_ID")
         mut_count_df =  fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
@@ -337,7 +337,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
         n_mut_genes_full = n_mut_genes_full["gene_ID"].unique().shape[0]
 
     else: 
-        mut_count_df = pd.DataFrame({}, ["gene_ID", "pos", "ref", "alt", "qual"])
+        mut_count_df = pd.DataFrame({}, ["gene_ID", "pos", "ref", "alt", "read_counts", "read_depth", "label"])
         n_mut_genes_full = 0
 
     # from fully aligned genes, select those with any mutations

@@ -105,6 +105,7 @@ class yeastAnalysis(object):
                     if l[3] in df["alt_base"].tolist():
                         continue
                     mut_base = df["alt_base"].tolist()[0]
+                    mut_counts = df["read_count"].tolist()[0]
                     if len(l[3]) > 1:
                         label = "indel"
                     elif len(mut_base) > 1:
@@ -112,64 +113,17 @@ class yeastAnalysis(object):
                     else:
                         label = "SNP"
                     # track how many variants for each gene (with more than 10 reads mapped to it)
-                    mut_count.append([l[0], l[1], l[3], mut_base, l[5], label])
+                    mut_count.append([l[0], l[1], l[3], mut_base, l[5], mut_counts, info_dict["DP"], label])
                     filteredvcf.write(line)
         return mut_count
     
-    def _process_target_genes(self):
+    def _process_mut(self, all_df, mut_df):
+        """
+        Based on the coding sequence and protein sequence, determine if the variant is a syn/non-syn variant
+        :param all_df: data frame contains all the coding sequence and protein sequences
+        :param mut_df: data frame contains all the mutations
+        :return: mut_df with syn label
+        """
         pass
 
-    def filter_full_vcf(self):
-        """
-        Filter vcf file (full, including ambiguous and non-variant sites)
-        :return: mut_count_dict
-        """
-        filtered_vcf = self._rawvcf.replace("_raw", "_raw_filtered")
-        mut_count_dict = {}
-        with open(self._rawvcf, "r") as rawvcf:
-            with open(filtered_vcf, "w") as filteredvcf:
-                for line in rawvcf:
-                    if "#" in line: continue
-                    l = line.split()
-                    # if alt is ref
-                    if l[4] == "<*>":
-                        continue
-                    # get variant call with quality > 20
-                    try:
-                        qual = float(l[5])
-                    except:
-                        continue
-                    if qual < 20: continue
-                    # get DP for this position
-                    # match_str = "DP=([0-9]+)"
-                    # m = re.search(match_str, l[7])
-                    # if m:
-                    #     dp = int(m.group(1))
-                    # if dp < 10: continue
-                    info_title = l[-2].split(":")
-                    info = l[-1].split(":")
-                    info_dict = dict(zip(info_title, info))
-                    print(info_dict)
-                    if int(info_dict["DP"]) < 10: # informative read depth
-                        continue
-                    print("passed dp")
-                    alt_bases = l[4].split(",")
-                    AD = info_dict["AD"].split(",")
-                    alt_depth = dict(zip(alt_bases, AD))
-                    pass_alt_filter = False
-                    print(all_depth)
-                    for bp in alt_depth.keys():
-                        freq = float(alt_depth[bp]) / float(info_dict["DP"])
-                        if bp == "<*>" and freq > 0.5:
-                            print(all_depth)
-                            # more than half the reads support wt
-                            continue
-                        pass_alt_filter = True
-                    if pass_alt_filter:
-                        filtered_vcf.write(line)
-                        # track how many variants for each gene (with more than 10 reads mapped to it)
-                        if mut_count_dict.get(l[0], -1) == -1:
-                            mut_count_dict[l[0]] = 1
-                        else:
-                            mut_count_dict[l[0]] += 1
-        return  mut_count_dict
+
