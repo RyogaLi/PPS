@@ -112,3 +112,27 @@ class humanAnalysis(object):
                     mut_count.append([l[0], l[1], l[3], mut_base, l[5], label])
                     filteredvcf.write(line)
         return mut_count
+
+    def _process_mut(self, all_df, mut_df):
+        """
+        Based on the coding sequence and protein sequence, determine if the variant is a syn/non-syn variant,
+        also call gnomAD API to see if the variant is common
+        :param all_df: data frame contains all the coding sequence and protein sequences
+        :param mut_df: data frame contains all the mutations
+        :return: mut_df with syn label
+        """
+        pass
+
+    def _get_gnomAD(self):
+        """
+        Use gnomad API to get variants from gnomAD
+        :return:
+        """
+        pass
+
+    def _get_clinvar(self):
+        """
+        Process clinvar db and get variants from clinvar
+        :return:
+        """
+        pass
