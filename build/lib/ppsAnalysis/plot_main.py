@@ -155,6 +155,7 @@ class PlotObjYeast(object):
         plt.savefig(os.path.join(self._dir, "full_with_variants_barplot.png"))
         plt.close()
 
+
 class PlotObjHuman(object):
 
     def __init__(self, inputdir):
@@ -191,6 +192,7 @@ class PlotObjHuman(object):
         plt.ylabel("Fraction of targeted ORFs in each group", fontsize=30)
         # Create legend & Show graphic
         plt.legend(fontsize=29)
+        plt.ylim((0,1))
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "full_with_variants_barplot.png"))
         plt.close()

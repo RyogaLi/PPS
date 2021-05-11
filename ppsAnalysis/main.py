@@ -205,8 +205,7 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
 
     # get all the mutations
     all_mut_df = pd.concat(all_mut_df)
-
-
+    print(all_mut_df[all_mut_df["ref"] == all_mut_df["alt"]])
 
     # save to file
     all_mut_file = os.path.join(output, "all_mutations.csv")
@@ -337,15 +336,14 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
         all_seq = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/all_sequence.csv"
         all_seq_df = pd.read_csv(all_seq)
         processed_mut = analysis.process_mut(all_seq_df, mut_count_df)
-
         # from fully aligned genes, select those with any mutations
-        fully_aligned_with_mut = pd.merge(fully_covered, mut_count_df, how="left", left_on="gene_ID", right_on="gene_ID")
+        fully_aligned_with_mut = pd.merge(fully_covered, processed_mut, how="left", left_on="gene_ID", right_on="gene_ID")
         mut_count_df =  fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
         n_mut_genes_full = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
         n_mut_genes_full = n_mut_genes_full["gene_ID"].unique().shape[0]
 
     else: 
-        mut_count_df = pd.DataFrame({}, ["gene_ID", "pos", "ref", "alt", "read_counts", "read_depth", "label"])
+        mut_count_df = pd.DataFrame({}, ["gene_ID", "pos", "ref", "alt", "read_counts", "read_depth", "label", "type"])
         n_mut_genes_full = 0
 
     stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_mut_genes_full, n_ref]
