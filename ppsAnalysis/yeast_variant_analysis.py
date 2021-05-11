@@ -117,13 +117,24 @@ class yeastAnalysis(object):
                     filteredvcf.write(line)
         return mut_count
     
-    def _process_mut(self, all_df, mut_df):
+    def process_mut(self, all_df, mut_df):
         """
         Based on the coding sequence and protein sequence, determine if the variant is a syn/non-syn variant
         :param all_df: data frame contains all the coding sequence and protein sequences
         :param mut_df: data frame contains all the mutations
         :return: mut_df with syn label
         """
-        pass
+        # select subset of orfs with mut on this plate
+        merge_mut = pd.merge(mut_df, all_df, how="left", left_on="gene_ID", right_on="ORF_id")
+        # for each pos, assign codon
+        codon = [i+1 if (i%3 != 0) else i for i in merge_mut["pos"]]
+        merge_mut["codon"] = codon
+
+        # for each variant (SNP), find out where it is (in which codon)
+        # first group by ORF name
+        # for each group, assign codon
+
+        # then group by pos (within the same codon)
+
 
 

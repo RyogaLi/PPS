@@ -202,9 +202,12 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log.to_csv(all_log_file, index=False)
-    
+
     # get all the mutations
     all_mut_df = pd.concat(all_mut_df)
+
+
+
     # save to file
     all_mut_file = os.path.join(output, "all_mutations.csv")
     all_mut_df.to_csv(all_mut_file, index=False)
@@ -289,7 +292,6 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
     return merged_df, stats_list, merge_mut
 
 
-
 def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     """
     Run yeast variants analysis, make files for each plate and save to corresponded dir
@@ -330,6 +332,12 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     if not mut_count == []:
         mut_count_df = pd.DataFrame(mut_count)
         mut_count_df.columns = ["gene_ID", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label"]
+        # label mutations with syn/non-syn
+        # load all sequences
+        all_seq = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/all_sequence.csv"
+        all_seq_df = pd.read_csv(all_seq)
+        processed_mut = analysis.process_mut(all_seq_df, mut_count_df)
+
         # from fully aligned genes, select those with any mutations
         fully_aligned_with_mut = pd.merge(fully_covered, mut_count_df, how="left", left_on="gene_ID", right_on="gene_ID")
         mut_count_df =  fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
@@ -340,24 +348,12 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
         mut_count_df = pd.DataFrame({}, ["gene_ID", "pos", "ref", "alt", "read_counts", "read_depth", "label"])
         n_mut_genes_full = 0
 
-    # from fully aligned genes, select those with any mutations
     stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_mut_genes_full, n_ref]
 
-    #test_raw_filter = analysis.filter_full_vcf()
-    # # merge with ref to get gene len
-    # ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
-    # ref.columns = ["gene_name", "gene_len"]
-    # merge_mut_count = pd.merge(gene_mut_count, ref, how="left", on="gene_name")
-    # # split gene name col
-    # merge_mut_count["gene_ID"] = merge_mut_count["gene_name"].str.replace("gene", "")
-    # merge_mut_count = merge_mut_count.replace(to_replace ='-index[0-9]+', value = '', regex = True)
-    # # merge this with targeted ORFs
-    # target_gene_mut_count = pd.merge(orfs_df, merge_mut_count, how="left", left_on="orf_name", right_on="gene_ID")
-    # # save to file
-    # target_gene_mut_file = os.path.join(sub_output, "target_gene_mutcount.csv")
-    # target_gene_mut_count.to_csv(target_gene_mut_file, index=False)
+
 
     return merged_df, stats_list, mut_count_df
+
 
 def check_args(arguments):
     """
@@ -390,6 +386,7 @@ def check_args(arguments):
         raise ValueError("Please provide valid mode")
 
     return orfs
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plasmid pool sequencing analysis')
