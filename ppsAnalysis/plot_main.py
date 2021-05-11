@@ -66,7 +66,20 @@ class PlotObjYeast(object):
 
         all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
         all_mut = pd.read_csv(all_mut_summary)
+        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
         all_mut["gene_name"] = all_mut["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
+        all_mut_genes = all_mut["gene_name"].dropna().unique()
+        venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], set_labels=("all ORFs",
+                                                                                                     "fully covered",
+                                                                                                     "fully covered "
+                                                                                                     "with non-syn "
+                                                                                                     "variants"))
+        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], linestyle='dashed',
+                      linewidth=1, color="grey")
+        plt.savefig(os.path.join(self._dir, "./all_venn3.png"))
+        plt.close()
+
+
         all_mut_hip = all_mut[all_mut["db"] == "HIP"]
         all_mut_hip["gene_name"] = all_mut_hip["gene_name"].replace("-", "")
         all_mut_hip_genes = all_mut_hip["gene_name"].dropna().unique()
