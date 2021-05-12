@@ -91,8 +91,12 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     genes_found = []
     all_genes_summary = pd.DataFrame([],
                                      columns=["orf_id", 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified', '# mut', 'orf_name', 'gene_ID', 'gene_len'])
-    all_summary = os.path.join(output, "all_summary_subsetORF.csv")
-    all_genes_summary.to_csv(all_summary, index=False)
+    all_found_summary = os.path.join(output, "all_full_summary.csv")
+    all_genes_summary.to_csv(all_found_summary, index=False)
+
+    all_full_summary = os.path.join(output, "all_found_summary.csv")
+    all_genes_summary.to_csv(all_full_summary, index=False)
+
     all_mut_df = []
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
@@ -122,10 +126,15 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
-            fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df)
+            all_found, fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df)
             fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
-            fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
+            all_found_file = os.path.join(sub_output, "all_found_groupSpecORFs.csv")
+            all_found.to_csv(all_found_file, index=False)
+
+            fully_covered.to_csv(all_full_summary, index=False, header=False, mode="a")
+            all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
+
             stats_list.append("groupSpecORFs")
             genes_found.append(stats_list)
             mut_df["sample"] = fastq_ID
@@ -270,25 +279,34 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
     fully_covered = pd.DataFrame.from_dict(full_cover_genes, orient='index').reset_index()
     fully_covered.columns = ["gene_ID", "gene_len"]
 
+    # save all the genes that are found to output
+    # save all the genes that are fully covered to the output folder
+    all_found = pd.DataFrame.from_dict(gene_dict, orient='index').reset_index()
+    all_found.columns = ["gene_ID", "gene_len"]
+
     # merge with target orfs
-    merged_df = pd.merge(orfs_df, fully_covered, how="left", left_on="orf_name", right_on="gene_ID")
+    merged_df = pd.merge(orfs_df, all_found, how="left", left_on="orf_name", right_on="gene_ID")
     merged_df = merged_df[~merged_df["gene_ID"].isnull()]
+
+    # merge with target orfs
+    merged_df_full = pd.merge(orfs_df, fully_covered, how="left", left_on="orf_name", right_on="gene_ID")
+    merged_df_full = merged_df_full[~merged_df_full["gene_ID"].isnull()]
     n_targeted = orfs_df.shape[0]
-    n_targeted_full = merged_df.shape[0]
-    
+    n_targeted_full = merged_df_full.shape[0]
+
     mut_df = analysis.filter_vcf()
     mut_df = pd.DataFrame(mut_df)
     mut_df.columns = ["gene_ID", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label"]
-    
+
     # merge mut_df with fully covered
     merge_mut = pd.merge(mut_df, fully_covered, how="left", on="gene_ID")
-    merge_mut = merge_mut[~merge_mut["gene_len"].isnull()]
+    merge_mut_fully_covered = merge_mut[~merge_mut["gene_len"].isnull()]
     # count how many ORFs have variants
-    n_orf_with_v = len(merge_mut["gene_ID"].unique())
+    n_orf_with_v = len(merge_mut_fully_covered["gene_ID"].unique())
 
     # from fully aligned genes, select those with any mutations
     stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_orf_with_v, n_ref]
-    return merged_df, stats_list, merge_mut
+    return merged_df, merged_df_full, stats_list, merge_mut
 
 
 def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
@@ -347,8 +365,6 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
         n_mut_genes_full = 0
 
     stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_mut_genes_full, n_ref]
-
-
 
     return merged_df, stats_list, mut_count_df
 

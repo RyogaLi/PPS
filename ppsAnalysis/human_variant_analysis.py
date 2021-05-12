@@ -102,6 +102,7 @@ class humanAnalysis(object):
                     if l[3] in df["alt_base"].tolist():
                         continue
                     mut_base = df["alt_base"].tolist()[0]
+                    mut_counts = df["read_count"].tolist()[0]
                     if len(l[3]) > 1:
                         label = "indel"
                     elif len(mut_base) > 1:
@@ -109,7 +110,7 @@ class humanAnalysis(object):
                     else:
                         label = "SNP"
                     # track how many variants for each gene (with more than 10 reads mapped to it)
-                    mut_count.append([l[0], l[1], l[3], mut_base, l[5], label])
+                    mut_count.append([l[0], l[1], l[3], mut_base, mut_counts, info_dict["DP"], l[5], label])
                     filteredvcf.write(line)
         return mut_count
 

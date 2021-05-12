@@ -91,10 +91,10 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     genes_found = []
     all_genes_summary = pd.DataFrame([],
                                      columns=["orf_id", 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified', '# mut', 'orf_name', 'gene_ID', 'gene_len'])
-    all_found_summary = os.path.join(output, "all_full_summary.csv")
+    all_found_summary = os.path.join(output, "all_found_summary.csv")
     all_genes_summary.to_csv(all_found_summary, index=False)
 
-    all_full_summary = os.path.join(output, "all_found_summary.csv")
+    all_full_summary = os.path.join(output, "all_full_summary.csv")
     all_genes_summary.to_csv(all_full_summary, index=False)
 
     all_mut_df = []
@@ -133,7 +133,7 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
             all_found.to_csv(all_found_file, index=False)
 
             fully_covered.to_csv(all_full_summary, index=False, header=False, mode="a")
-            all_found.to_csv(all_full_summary, index=False, header=False, mode="a")
+            all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
 
             stats_list.append("groupSpecORFs")
             genes_found.append(stats_list)
