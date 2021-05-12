@@ -303,13 +303,28 @@ class PlotObjHuman(object):
         """
         human_91 = "/Users/roujia/Documents/02_dev/04_HuRI/human ORF/20161117_ORFeome91_seqs.csv"
         human_ORFs = read_human_csv(human_91)
-        all_summary = os.path.join(self._dir, "all_summary_subsetORF.csv")
+        all_full_summary = os.path.join(self._dir, "all_full_summary.csv")
+        all_found_summary = os.path.join(self._dir, "all_found_summary.csv")
         # compare genes in all the targeted space (ORFs) vs all fully aligned
         all_targeted_unique_db = human_ORFs["orf_name"].dropna().unique()
-        all_fully_aligned = pd.read_csv(all_summary)
-        all_found_genes = all_fully_aligned["orf_name"].dropna().unique()
-        venn2([set(all_targeted_unique_db), set(all_found_genes)], set_labels=("all ORFs", "all_fully_aligned"))
-        plt.savefig(os.path.join(self._dir, "./allORFs_fullaligned_venn.png"))
+        all_fully_aligned = pd.read_csv(all_full_summary)
+        all_found = pd.read_csv(all_found_summary)
+        all_found_genes = all_found["orf_name"].dropna().unique()
+        all_fully_aligned_genes = all_fully_aligned["orf_name"].dropna().unique()
+
+        vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_fully_aligned_genes)], set_labels=("all "
+                                                                                                              "ORFs",
+                                                                                        "all found",
+                                                                                                             "fully "
+                                                                                                             "covered"))
+        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_fully_aligned_genes)], linestyle='dashed',
+                      linewidth=1, color="black")
+        vd.get_label_by_id("100").set_x(-0.6)
+        vd.get_label_by_id("100").set_y(0.3)
+        vd.get_label_by_id("11").set_y(-0.2)
+        vd.get_label_by_id("111").set_x(0.2)
+        vd.get_label_by_id("11").set_y(-0.1)
+        plt.savefig(os.path.join(self._dir, "./allORFs_venn.png"))
         plt.close()
 
         all_found_genes = all_fully_aligned["orf_name"].dropna().unique()
@@ -319,14 +334,17 @@ class PlotObjHuman(object):
 
         all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
         all_mut = pd.read_csv(all_mut_summary)
+        all_mut = all_mut[~all_mut["gene_len"].isnull()]
         all_mut_hip_genes = all_mut["gene_ID"].dropna().unique()
 
-        venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_hip_genes)], set_labels=("all ORFs",
-                                                                                                     "fully aligned",
-                                                                                                     "fully aligned with "
+        vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_hip_genes)], set_labels=("all ORFs",
+                                                                                                     "fully covered",
+                                                                                                     "fully covered; "
+                                                                                                     "with any "
                                                                                                      "mut"))
         venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_hip_genes)], linestyle='dashed',
                       linewidth=1, color="black")
+        plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "./allORFs_venn3.png"))
         plt.close()
 
