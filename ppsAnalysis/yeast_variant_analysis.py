@@ -127,17 +127,14 @@ class yeastAnalysis(object):
         # select subset of orfs with mut on this plate
         merge_mut = pd.merge(mut_df, all_df, how="left", left_on="gene_ID", right_on="ORF_id")
         # for each pos, assign codon
-        print(merge_mut["pos"])
         codon = [(int(i)//3)+1 if (int(i)%3 != 0) else int(i)/3 for i in merge_mut["pos"].tolist()]
         merge_mut["codon"] = codon
-        print(merge_mut["codon"])
 
         # first group by ORF name
         # for each group, assign codon
         # SNP
         snp = merge_mut[merge_mut["label"] == "SNP"]
         grouped = snp.groupby(["gene_ID", "codon"])
-        print(grouped.head())
         table = {
         'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
         'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
