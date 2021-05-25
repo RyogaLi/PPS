@@ -35,6 +35,7 @@ class PlotObjYeast(object):
 
         # compare genes in all the targeted space (ORFs) vs all fully aligned
         all_targeted_unique_db = orfs["ORF_NAME_NODASH"].dropna().unique()
+
         all_found = pd.read_csv(all_found_summary)
         all_fully_covered = pd.read_csv(all_summary)
 

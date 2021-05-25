@@ -183,6 +183,13 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     fully_covered.columns = ["gene_ID", "gene_len"]
     # split gene ID col
     # fully_covered["gene_ID"] = fully_covered["gene_ID"].str.replace(to_replace="-[A-G]", "A")
+    # save all the genes that are found to output
+    # save all the genes that are fully covered to the output folder
+    all_found = pd.DataFrame.from_dict(gene_dict, orient='index').reset_index()
+    all_found.columns = ["gene_ID", "gene_len"]
+    # merge with target orfs
+    merged_df = pd.merge(orfs_df, all_found, how="left", left_on="orf_name", right_on="gene_ID")
+    merged_df = merged_df[~merged_df["gene_ID"].isnull()]
 
     # fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
     fully_covered["db"] = fully_covered["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")
@@ -190,9 +197,9 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     fully_covered["gene_name"] = fully_covered["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
 
     # merge with target orfs
-    merged_df = pd.merge(orfs_df, fully_covered.drop(['db'], axis=1), how="left", left_on="orf_name",
+    merged_df_full = pd.merge(orfs_df, fully_covered.drop(['db'], axis=1), how="left", left_on="orf_name",
                          right_on="gene_ID")
-    merged_df_full = merged_df[~merged_df["gene_ID"].isnull()]
+    merged_df_full = merged_df_full[~merged_df_full["gene_ID"].isnull()]
     merged_df_full = merged_df_full[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name"]]
     # merged_file = os.path.join(sub_output, "merged_with_targets.csv")
     # merged_df.to_csv(merged_file, index=False)
