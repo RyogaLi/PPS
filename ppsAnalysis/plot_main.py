@@ -13,6 +13,7 @@ import numpy as np
 import argparse
 from matplotlib_venn import venn2, venn2_circles, venn2_unweighted, venn3, venn3_circles
 
+
 class PlotObjYeast(object):
 
     def __init__(self, inputdir):
@@ -96,7 +97,8 @@ class PlotObjYeast(object):
         all_mut_sgd["gene_name"] = all_mut_sgd["gene_name"].replace("-", "")
         all_mut_sgd_genes = all_mut_sgd["gene_name"].dropna().unique()
 
-        venn3([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_mut_sgd_genes)], set_labels=("all SGD ORFs",
+        venn3([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_mut_sgd_genes)], set_labels=("all Supp-SGD "
+                                                                                                     "ORFs",
                                                                                                  "fully covered",
                                                                                                  "fully covered; "
                                                                                                      "with non-syn variants"))
@@ -109,7 +111,7 @@ class PlotObjYeast(object):
         all_mut_prot = all_mut[all_mut["db"] == "PROTGEN"]
         all_mut_prot["gene_name"] = all_mut_prot["gene_name"].replace("-", "")
         all_mut_prot_genes = all_mut_prot["gene_name"].dropna().unique()
-        venn3([set(all_PROT_targeted), set(all_found_genes_prot), set(all_mut_prot_genes)], set_labels=("all PROT "
+        venn3([set(all_PROT_targeted), set(all_found_genes_prot), set(all_mut_prot_genes)], set_labels=("all Supp-PROT "
                                                                                                         "ORFs",
                                                                                                  "fully covered",
                                                                                                  "fully covered; "
@@ -154,7 +156,8 @@ class PlotObjYeast(object):
         all_mut_sgd["gene_name"] = all_mut_sgd["gene_name"].replace("-", "")
         all_mut_sgd_genes = all_mut_sgd["gene_name"].dropna().unique()
 
-        venn3([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_mut_sgd_genes)], set_labels=("all SGD ORFs",
+        venn3([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_mut_sgd_genes)], set_labels=("all Supp-SGD "
+                                                                                                     "ORFs",
                                                                                                      "fully covered",
                                                                                                      "fully covered; "
                                                                                                      "with any "
@@ -168,7 +171,7 @@ class PlotObjYeast(object):
         all_mut_prot = all_mut[all_mut["db"] == "PROTGEN"]
         all_mut_prot["gene_name"] = all_mut_prot["gene_name"].replace("-", "")
         all_mut_prot_genes = all_mut_prot["gene_name"].dropna().unique()
-        venn3([set(all_PROT_targeted), set(all_found_genes_prot), set(all_mut_prot_genes)], set_labels=("all PROT "
+        venn3([set(all_PROT_targeted), set(all_found_genes_prot), set(all_mut_prot_genes)], set_labels=("all Supp-PROT "
                                                                                                         "ORFs",
                                                                                                         "fully covered",
                                                                                                         "fully covered; "
@@ -221,7 +224,7 @@ class PlotObjYeast(object):
                                                                                             'variants')
         plt.xticks(r1, labels=all_genes_stats["xlabel"].tolist(), rotation=30, fontsize=27)
         plt.yticks(fontsize=27)
-        plt.ylabel("Fraction of targeted ORFs on each plate", fontsize=30)
+        plt.ylabel("Fraction of targeted ORFs on each plate that are fully covered", fontsize=30)
         # Create legend & Show graphic
         plt.legend(fontsize=29)
         plt.tight_layout()
@@ -253,6 +256,7 @@ class PlotObjYeast(object):
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "./n_gene_with_variants.png"))
         plt.close()
+
 
 class PlotObjHuman(object):
 

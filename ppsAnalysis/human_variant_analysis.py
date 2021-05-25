@@ -110,7 +110,7 @@ class humanAnalysis(object):
                     else:
                         label = "SNP"
                     # track how many variants for each gene (with more than 10 reads mapped to it)
-                    mut_count.append([l[0], l[1], l[3], mut_base, mut_counts, info_dict["DP"], l[5], label])
+                    mut_count.append([l[0], l[1], l[3], mut_base,  l[5], mut_counts, info_dict["DP"], label])
                     filteredvcf.write(line)
         return mut_count
 
