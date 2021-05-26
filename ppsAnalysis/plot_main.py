@@ -39,11 +39,14 @@ class PlotObjYeast(object):
         all_found = pd.read_csv(all_found_summary)
         all_fully_covered = pd.read_csv(all_summary)
 
-        all_found["gene_name"] = all_found["gene_name"].replace("-", "")
-        all_found_genes = all_found["gene_name"].dropna().unique()
+        all_found["orf_name"] = all_found["orf_name"].replace("-", "")
+        all_found_genes = all_found["orf_name"].dropna().unique()
 
         all_fully_covered["gene_name"] = all_fully_covered["gene_name"].replace("-", "")
         all_fully_covered = all_fully_covered["gene_name"].dropna().unique()
+        print(all_fully_covered)
+        print(all_found)
+        print(all_found_genes)
         venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_fully_covered)], set_labels=("all ORFs",
                                                                                                    "all found",
                                                                                                    "fully covered"))
@@ -51,6 +54,7 @@ class PlotObjYeast(object):
                       linewidth=1, color="black")
         plt.savefig(os.path.join(self._dir, "./all_venn3_allfound.png"))
         plt.close()
+        exit()
 
         all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
         all_mut = pd.read_csv(all_mut_summary)
