@@ -9,7 +9,8 @@ import os
 import operator
 import re
 import pandas as pd
-
+import requests
+import time
 
 class humanAnalysis(object):
 
@@ -122,7 +123,8 @@ class humanAnalysis(object):
         :return: mut_df with syn label
         """
         # select subset of orfs with mut on this plate
-        merge_mut = pd.merge(mut_df, self._orfs, how="left", left_on="gene_ID", right_on="ORF_id")
+        merge_mut = pd.merge(mut_df, self._orfs, how="left", left_on="gene_ID", right_on="orf_name")
+
         # for each pos, assign codon
         codon = [(int(i) // 3) + 1 if (int(i) % 3 != 0) else int(i) / 3 for i in merge_mut["pos"].tolist()]
         merge_mut["codon"] = codon
@@ -185,14 +187,68 @@ class humanAnalysis(object):
         # join two table
         joined = pd.concat([snp, indel])
 
+        # get gnomad variants for genes in the table
+        # merge_gnomad = []
+        #gene_list = joined.gene_ID.unique().tolist()
+        #for gene in gene_list:
+        #    gnomAD_variants = self._get_gnomAD(gene)
+        #    pps_variants = joined[joined["gene_ID"] == gene]
+        #    merge_df = pd.merge(pps_variants, gnomAD_variants, how="left", left_on="pos", right_on="cds_pos", suffixes=["_pps", "_gnomad"])
+        #    merge_gnomad.append(merge_df)
+        #joined = pd.concat(merge_gnomad)
         return joined
 
-    def _get_gnomAD(self):
+
+    def _get_gnomAD(self, gene_ID):
         """
         Use gnomad API to get variants from gnomAD
         :return:
         """
-        pass
+        gene_name = gene_ID.split("_")[-1]
+        print(gene_name)
+        # use transcript id instead
+        q = """
+        {
+            gene(reference_genome: GRCh37, gene_symbol: "%s"){
+            variants(dataset: gnomad_r2_1) {
+            consequence
+            pos
+            variantId
+            hgvs
+            ref
+            alt
+            hgvsc
+            hgvsp
+            genome {
+            af
+            }
+            }
+            }
+
+        }""" % gene_name
+
+        # send request
+        r = requests.post("https://gnomad.broadinstitute.org/api", json={'query': q})
+        while r.status_code != 200:
+            time.sleep(300)
+            r = requests.post("https://gnomad.broadinstitute.org/api", json={'query': q})
+
+        variants = r.json()
+        if variants["data"]["gene"] is None:
+            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'cds_pos'])
+
+        variants_dict = variants["data"]["gene"]["variants"]
+        # convert response to dataframe
+        df = pd.DataFrame.from_dict(variants_dict)
+        if df.empty:
+            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'cds_pos'])
+
+        coding_variants = df[df.hgvsp.notnull()]
+        # extract cds position using regex
+        coding_variants["cds_pos"] = coding_variants['hgvsc'].str.extract('(\d+)', expand=True)
+        return coding_variants
+
+        
 
     def _get_clinvar(self):
         """
