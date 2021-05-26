@@ -242,10 +242,10 @@ if __name__ == "__main__":
     parser.add_argument('--align', action="store_true", help='provide this argument if users want to start with '
                                                          'alignment, otherwise the program assumes alignment was '
                                                          'done and will analyze the vcf files.')
-    parser.add_argument("-f", "--fastq", help="input fastq files")
-    parser.add_argument("-r", "--ref", help="Path to referece files")
-    parser.add_argument('-o', "--output", help='Output directory', required=True)
-    parser.add_argument('-n', "--name", help='Name for this run', required=True)
+    parser.add_argument("-f", "--fastq", help="input fastq files", default="/home/rothlab/rli/01_ngsdata/PPS_data/orfPool/merged_pool9-1/")
+    parser.add_argument("-r", "--ref", help="Path to referece files", default="/home/rothlab/rli/human_test0/")
+    parser.add_argument('-o', "--output", help='Output directory', default="/home/rothlab/rli/02_dev/06_pps_pipeline/output/")
+    parser.add_argument('-n', "--name", help='Name for this run', default="/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/")
     args = parser.parse_args()
 
     variants_main(args)
