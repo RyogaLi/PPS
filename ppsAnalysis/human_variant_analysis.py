@@ -114,7 +114,7 @@ class humanAnalysis(object):
                     filteredvcf.write(line)
         return mut_count
 
-    def _process_mut(self, mut_df):
+    def process_mut(self, mut_df):
         """
         Based on the coding sequence and protein sequence, determine if the variant is a syn/non-syn variant,
         also call gnomAD API to see if the variant is common
@@ -184,6 +184,8 @@ class humanAnalysis(object):
 
         # join two table
         joined = pd.concat([snp, indel])
+
+        return joined
 
     def _get_gnomAD(self):
         """
