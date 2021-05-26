@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 from matplotlib_venn import venn2, venn2_circles, venn2_unweighted, venn3, venn3_circles
-
+pd.options.mode.chained_assignment = None  # default='warn'
 
 class PlotObjYeast(object):
 
@@ -39,22 +39,18 @@ class PlotObjYeast(object):
         all_found = pd.read_csv(all_found_summary)
         all_fully_covered = pd.read_csv(all_summary)
 
-        all_found["orf_name"] = all_found["orf_name"].replace("-", "")
-        all_found_genes = all_found["orf_name"].dropna().unique()
+        all_found["gene_name"] = all_found["gene_name"].replace("-", "")
+        all_found_genes = all_found["gene_name"].dropna().unique()
 
         all_fully_covered["gene_name"] = all_fully_covered["gene_name"].replace("-", "")
-        all_fully_covered = all_fully_covered["gene_name"].dropna().unique()
-        print(all_fully_covered)
-        print(all_found)
-        print(all_found_genes)
-        venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_fully_covered)], set_labels=("all ORFs",
+        all_fully_covered_genes = all_fully_covered["gene_name"].dropna().unique()
+        venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_fully_covered_genes)], set_labels=("all ORFs",
                                                                                                    "all found",
                                                                                                    "fully covered"))
-        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_fully_covered)], linestyle='dashed',
+        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_fully_covered_genes)], linestyle='dashed',
                       linewidth=1, color="black")
         plt.savefig(os.path.join(self._dir, "./all_venn3_allfound.png"))
         plt.close()
-        exit()
 
         all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
         all_mut = pd.read_csv(all_mut_summary)
@@ -75,20 +71,61 @@ class PlotObjYeast(object):
         all_found_hip = all_found[all_found["db"] == "HIP"]
         all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
         all_found_genes_hip = all_found_hip["gene_name"].dropna().unique()
-
+        all_full_hip = all_fully_covered[all_fully_covered["db"] == "HIP"]
+        all_full_hip["gene_name"] = all_full_hip["gene_name"].replace("-", "")
+        all_fully_covered_genes_hip = all_full_hip["gene_name"].dropna().unique()
+        vd = venn3([set(all_HIP_targeted), set(all_found_genes_hip), set(all_fully_covered_genes_hip)],
+                   set_labels=(f"all HIP ORFs: {len(all_HIP_targeted)}", f"all found: {len(all_found_genes_hip)}", f"fully covered: {len(all_fully_covered_genes_hip)}"))
+        venn3_circles([set(all_HIP_targeted), set(all_found_genes_hip), set(all_fully_covered_genes_hip)], linestyle='dashed',
+                      linewidth=1, color="black")
+        vd.get_label_by_id("100").set_x(-0.6)
+        vd.get_label_by_id("100").set_y(0.3)
+        vd.get_label_by_id("111").set_x(0.2)
+        vd.get_label_by_id("11").set_y(-0.1)
+        plt.savefig(os.path.join(self._dir, "./all_found_full_hip.png"))
+        plt.close()
 
         # SGD subset
         all_SGD_targeted = orfs[orfs["db"] == "SGD"]["ORF_NAME_NODASH"].dropna().unique()
-        all_found_hip = all_found[all_found["db"] == "SGD"]
-        all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-        all_found_genes_sgd = all_found_hip["gene_name"].dropna().unique()
+        all_found_sgd = all_found[all_found["db"] == "SGD"]
+        all_found_sgd["gene_name"] = all_found_sgd["gene_name"].replace("-", "")
+        all_found_genes_sgd = all_found_sgd["gene_name"].dropna().unique()
 
+        all_full_sgd = all_fully_covered[all_fully_covered["db"] == "SGD"]
+        all_full_sgd["gene_name"] = all_full_sgd["gene_name"].replace("-", "")
+        all_fully_covered_genes_sgd = all_full_sgd["gene_name"].dropna().unique()
+        vd = venn3([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_fully_covered_genes_sgd)],
+              set_labels=(f"all supp-SGD ORFs: {len(all_SGD_targeted)}", f"all found: {len(all_found_genes_sgd)}",
+                          f"fully covered: {len(all_fully_covered_genes_sgd)}"))
+        venn3_circles([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_fully_covered_genes_sgd)], linestyle='dashed',
+                      linewidth=1, color="black")
+        vd.get_label_by_id("100").set_x(-0.6)
+        vd.get_label_by_id("100").set_y(0.3)
+        vd.get_label_by_id("111").set_x(0.2)
+        vd.get_label_by_id("11").set_y(-0.1)
+        plt.savefig(os.path.join(self._dir, "./all_found_full_sgd.png"))
+        plt.close()
 
         # PROTGEN subset
         all_PROT_targeted = orfs[orfs["db"] == "PROTGEN"]["ORF_NAME_NODASH"].dropna().unique()
-        all_found_hip = all_found[all_found["db"] == "PROTGEN"]
-        all_found_hip["gene_name"] = all_found_hip["gene_name"].replace("-", "")
-        all_found_genes_prot = all_found_hip["gene_name"].dropna().unique()
+        all_found_prot = all_found[all_found["db"] == "PROTGEN"]
+        all_found_prot["gene_name"] = all_found_prot["gene_name"].replace("-", "")
+        all_found_genes_prot = all_found_prot["gene_name"].dropna().unique()
+
+        all_full_prot = all_fully_covered[all_fully_covered["db"] == "PROTGEN"]
+        all_full_prot["gene_name"] = all_full_prot["gene_name"].replace("-", "")
+        all_fully_covered_genes_prot = all_full_prot["gene_name"].dropna().unique()
+        vd = venn3([set(all_PROT_targeted), set(all_found_genes_prot), set(all_fully_covered_genes_prot)],
+              set_labels=(f"all supp-PROT ORFs: {len(all_PROT_targeted)}", f"all found: {len(all_found_genes_prot)}",
+                          f"fully covered: {len(all_fully_covered_genes_prot)}"))
+        venn3_circles([set(all_PROT_targeted), set(all_found_genes_prot), set(all_fully_covered_genes_prot)], linestyle='dashed',
+                      linewidth=1, color="black")
+        vd.get_label_by_id("100").set_x(-0.6)
+        vd.get_label_by_id("100").set_y(0.3)
+        vd.get_label_by_id("111").set_x(0.2)
+        vd.get_label_by_id("11").set_y(-0.1)
+        plt.savefig(os.path.join(self._dir, "./all_found_full_prot.png"))
+        plt.close()
 
 
         all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
@@ -96,11 +133,10 @@ class PlotObjYeast(object):
         all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
         all_mut["gene_name"] = all_mut["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
         all_mut_genes = all_mut["gene_name"].dropna().unique()
-        venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], set_labels=("all ORFs",
-                                                                                                     "fully covered",
-                                                                                                     "fully covered; "
-                                                                                                     "with non-syn variants"))
-        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], linestyle='dashed',
+        venn3([set(all_targeted_unique_db), set(all_fully_covered_genes), set(all_mut_genes)],
+              set_labels=(f"all ORFs:{len(all_targeted_unique_db)}", f"fully covered: {len(all_fully_covered_genes)}",
+                          f"fully covered; \n with non-syn variants: {len(all_mut_genes)}"))
+        venn3_circles([set(all_targeted_unique_db), set(all_fully_covered_genes), set(all_mut_genes)], linestyle='dashed',
                       linewidth=1, color="black")
         plt.savefig(os.path.join(self._dir, "./all_venn3_nonsyn.png"))
         plt.close()
@@ -110,11 +146,10 @@ class PlotObjYeast(object):
         all_mut_hip["gene_name"] = all_mut_hip["gene_name"].replace("-", "")
         all_mut_hip_genes = all_mut_hip["gene_name"].dropna().unique()
 
-        venn3([set(all_HIP_targeted), set(all_found_genes_hip), set(all_mut_hip_genes)], set_labels=("all HIP ORFs",
-                                                                                                 "fully covered",
-                                                                                                 "fully covered; "
-                                                                                                     "with non-syn variants"))
-        venn3_circles([set(all_HIP_targeted), set(all_found_genes_hip), set(all_mut_hip_genes)], linestyle='dashed',
+        venn3([set(all_HIP_targeted), set(all_fully_covered_genes_hip), set(all_mut_hip_genes)],
+              set_labels=(f"all HIP ORFs:{len(all_HIP_targeted)}", f"fully covered: {len(all_fully_covered_genes_hip)}",
+                          f"fully covered; \n with non-syn variants: {len(all_mut_hip_genes)}"))
+        venn3_circles([set(all_HIP_targeted), set(all_fully_covered_genes_hip), set(all_mut_hip_genes)], linestyle='dashed',
                       linewidth=1, color="black")
         plt.savefig(os.path.join(self._dir, "./HIPORFs_venn3_nonsyn.png"))
         plt.close()
@@ -123,12 +158,11 @@ class PlotObjYeast(object):
         all_mut_sgd["gene_name"] = all_mut_sgd["gene_name"].replace("-", "")
         all_mut_sgd_genes = all_mut_sgd["gene_name"].dropna().unique()
 
-        venn3([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_mut_sgd_genes)], set_labels=("all Supp-SGD "
-                                                                                                     "ORFs",
-                                                                                                 "fully covered",
-                                                                                                 "fully covered; "
-                                                                                                     "with non-syn variants"))
-        venn3_circles([set(all_SGD_targeted), set(all_found_genes_sgd), set(all_mut_sgd_genes)], linestyle='dashed',
+        venn3([set(all_SGD_targeted), set(all_fully_covered_genes_sgd), set(all_mut_sgd_genes)],
+              set_labels=(f"all supp-SGD ORFs:{len(all_SGD_targeted)}", f"fully covered:"
+                                                                    f" {len(all_fully_covered_genes_sgd)}",
+                          f"fully covered; \n with non-syn variants: {len(all_mut_sgd_genes)}"))
+        venn3_circles([set(all_SGD_targeted), set(all_fully_covered_genes_sgd), set(all_mut_sgd_genes)], linestyle='dashed',
                       linewidth=1, color="black")
 
         plt.savefig(os.path.join(self._dir, "./SGDORFs_venn3_nonsyn.png"))
@@ -137,12 +171,12 @@ class PlotObjYeast(object):
         all_mut_prot = all_mut[all_mut["db"] == "PROTGEN"]
         all_mut_prot["gene_name"] = all_mut_prot["gene_name"].replace("-", "")
         all_mut_prot_genes = all_mut_prot["gene_name"].dropna().unique()
-        venn3([set(all_PROT_targeted), set(all_found_genes_prot), set(all_mut_prot_genes)], set_labels=("all Supp-PROT "
-                                                                                                        "ORFs",
-                                                                                                 "fully covered",
-                                                                                                 "fully covered; "
-                                                                                                     "with non-syn variants"))
-        venn3_circles([set(all_PROT_targeted), set(all_found_genes_prot), set(all_mut_prot_genes)], linestyle='dashed',
+        venn3([set(all_PROT_targeted), set(all_fully_covered_genes_prot), set(all_mut_prot_genes)],
+              set_labels=(f"all supp-PROT ORFs:{len(all_PROT_targeted)}", f"fully covered:"
+                                                                        f" {len(all_fully_covered_genes_prot)}",
+                          f"fully covered; \n with non-syn variants: {len(all_mut_prot_genes)}")
+              )
+        venn3_circles([set(all_PROT_targeted), set(all_fully_covered_genes_prot), set(all_mut_prot_genes)], linestyle='dashed',
                       linewidth=1, color="black")
 
         plt.savefig(os.path.join(self._dir, "./PROTORFs_venn3_nonsyn.png"))
@@ -417,7 +451,7 @@ def plot_main(inputdir):
         HIP_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/HIP_targeted_ORFs.csv"
         other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
         orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
-        # plot_obj.make_fully_covered_withmut_bar_plot()
+        plot_obj.make_fully_covered_withmut_bar_plot()
         # # # plot_obj.make_venn_variants(orfs)
         plot_obj.make_venn(orfs)
         plot_obj.plot_n_variants()
