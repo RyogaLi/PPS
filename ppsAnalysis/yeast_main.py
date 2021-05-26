@@ -190,6 +190,10 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     # merge with target orfs
     merged_df = pd.merge(orfs_df, all_found, how="left", left_on="orf_name", right_on="gene_ID")
     merged_df = merged_df[~merged_df["gene_ID"].isnull()]
+    merged_df["db"] = merged_df["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")
+    merged_df["count"] = merged_df["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")
+    merged_df["gene_name"] = merged_df["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
+
     merged_df = merged_df[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name"]]
     # fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
     fully_covered["db"] = fully_covered["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")

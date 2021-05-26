@@ -91,7 +91,7 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
     genes_found = []
     # create empty file to save all found genes
     all_genes_summary = pd.DataFrame([],columns=["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name"])
-    all_found_summary = os.path.join(output, "all_found_summary_subsetORF.csv")
+    all_found_summary = os.path.join(output, "all_found_summary_plateORF.csv")
     all_genes_summary.to_csv(all_found_summary, index=False)
     # create empty file to save all fully aligned genes
     all_summary = os.path.join(output, "all_summary_plateORF.csv")
@@ -183,16 +183,23 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     fully_covered.columns = ["gene_ID", "gene_len"]
     # split gene ID col
     # fully_covered["gene_ID"] = fully_covered["gene_ID"].str.replace(to_replace="-[A-G]", "A")
-
+    # save all the genes that are found to output
+    # save all the genes that are fully covered to the output folder
+    all_found = pd.DataFrame.from_dict(gene_dict, orient='index').reset_index()
+    all_found.columns = ["gene_ID", "gene_len"]
+    # merge with target orfs
+    merged_df = pd.merge(orfs_df, all_found, how="left", left_on="orf_name", right_on="gene_ID")
+    merged_df = merged_df[~merged_df["gene_ID"].isnull()]
+    merged_df = merged_df[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name"]]
     # fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
     fully_covered["db"] = fully_covered["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")
     fully_covered["count"] = fully_covered["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")
     fully_covered["gene_name"] = fully_covered["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
 
     # merge with target orfs
-    merged_df = pd.merge(orfs_df, fully_covered.drop(['db'], axis=1), how="left", left_on="orf_name",
+    merged_df_full = pd.merge(orfs_df, fully_covered.drop(['db'], axis=1), how="left", left_on="orf_name",
                          right_on="gene_ID")
-    merged_df_full = merged_df[~merged_df["gene_ID"].isnull()]
+    merged_df_full = merged_df_full[~merged_df_full["gene_ID"].isnull()]
     merged_df_full = merged_df_full[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name"]]
     # merged_file = os.path.join(sub_output, "merged_with_targets.csv")
     # merged_df.to_csv(merged_file, index=False)
@@ -277,10 +284,10 @@ if __name__ == "__main__":
     parser.add_argument('--align', action="store_true", help='provide this argument if users want to start with '
                                                          'alignment, otherwise the program assumes alignment was '
                                                          'done and will analyze the vcf files.')
-    parser.add_argument("-f", "--fastq", help="input fastq files", default="~/01_ngsdata/yeast_PPS_seqs/merged_r1r2/")
-    parser.add_argument("-r", "--ref", help="Path to referece files", default="~/02_dev/06_pps_pipeline/fasta/yeast_ref_all/")
-    parser.add_argument('-o', "--output", help='Output directory', required=True, default="~/02_dev/06_pps_pipeline/output/")
-    parser.add_argument('-n', "--name", help='Name for this run', required=True, default="yeast_alignedwithmoreinfo")
+    parser.add_argument("-f", "--fastq", help="input fastq files", default="/home/rothlab/rli/01_ngsdata/yeast_PPS_seqs/merged_r1r2/")
+    parser.add_argument("-r", "--ref", help="Path to referece files", default="/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/yeast_ref_all/")
+    parser.add_argument('-o', "--output", help='Output directory', default="/home/rothlab/rli/02_dev/06_pps_pipeline/output/")
+    parser.add_argument('-n', "--name", help='Name for this run', default="yeast_alignedwithmoreinfo")
     args = parser.parse_args()
 
     variants_main(args)
