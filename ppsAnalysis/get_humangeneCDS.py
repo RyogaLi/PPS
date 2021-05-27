@@ -6,7 +6,7 @@
 import sys
 
 sys.path.append('..')
-
+import requests
 import os
 import pandas as pd
 from ppsAnalysis import logthis
@@ -21,112 +21,38 @@ class getCDS(object):
         """
         self._input_df = pd.read_csv(input_file)
         self._data_path = data_path
-        input_dir = os.path.dirname(self._input)
+        input_dir = os.path.dirname(input_file)
         main_log = os.path.join(input_dir, "getCDS.log")
         log_obj = logthis.logit(log_f=main_log, log_level=loglevel)
         self._logger = log_obj.get_logger("main")
 
-    def _get_exons(self):
+    def _get_ensembl_dna(self):
         """
-        Get exon information from ensembl
+        go through the input df, get cds sequence from ensembl 
         """
-        # read input df
+        server = "https://rest.ensembl.org"
+        missing = []
+        output_file = os.path.join(self._data_path, "ensembl_seq.csv")
+        with open(output_file, "w") as output_f:
+            output_f.write("enst_id,enst_version,cds_seq\n")
+            for enst in self._input_df["ensembl_transcript_id"].tolist():
 
-        self._ccds2seq = os.path.join(self._data_path, "CCDS2Sequence.current.txt")
+                enst_id = enst.split(".")[0]
+                ext = f"/sequence/id/{enst_id}?type=cdna"
+ 
+                r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
+ 
+                if not r.ok:
+                    print(enst)
+                    missing.append(enst)
+                    continue 
+                decoded = r.json()
+                output_f.write(f"{decoded['id']},{decoded['version']},{decoded['seq']}\n")
+        print(missing)
 
-        if not os.path.exists(self._ccds2seq):
-            download = "https://ftp.ncbi.nlm.nih.gov/pub/CCDS/current_human/CCDS2Sequence.current.txt"
-            cmd = f"wget -O {self._ccds2seq} {download}"
-            os.system(cmd)
+if __name__ == "__main__":
+    humanref_withseq = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/20180524_DK_ReferenceORFeome_human_withensemblID.csv"
+    data_path = "/home/rothlab/rli/02_dev/06_pps_pipeline/publicdb"
 
-        ccds_convert = pd.read_csv(self._ccds2seq, sep="\t")
-        print(ccds_convert)
-        print(self._input_df)
-        print(ccds_convert["nucleotide_ID"])
-        exit()
-        ccds_id = ccds_convert[ccds_convert["nucleotide_ID"] == self._enst_can]
-
-        user_enst = ""
-        if ccds_id.empty:
-            self._logger.info(f"cannot find ccds ID for {self._enst_can}")
-            # try one version bak because CCDS db are not uptodate
-            enst_V = self._enst_can.split(".")[1]
-            self._enst_can = f"{self._enst_can.split('.')[0]}.{int(enst_V)-1}"
-            self._logger.info(f"Trying an older version .. {self._enst_can}")
-            ccds_id = ccds_convert[ccds_convert["nucleotide_ID"] == self._enst_can]
-
-        while ccds_id.empty:
-            self._logger.info(f"cannot find ccds ID for {self._enst_can}")
-            user_enst = input("Please provide another ENST: (type exit to exit) ")
-            if user_enst == "exit":
-                exit(1)
-            if user_enst == "next":
-                return -1
-            ccds_id = ccds_convert[ccds_convert["nucleotide_ID"] == user_enst]
-
-            self._logger.info(f"Updated ENST: {user_enst}")
-            self._enst_can = user_enst
-
-
-        self._ccds_id = ccds_id["#ccds"].values.item()
-        ccds_df = ccds_convert[ccds_convert["#ccds"] == self._ccds_id]
-        # get NM id and NP id from CCDS current file
-        self._nm = ccds_df.loc[(ccds_df["status_in_CCDS"] == "Accepted") & (ccds_df["source"] == "NCBI")]["nucleotide_ID"].values
-        self._np = ccds_df.loc[(ccds_df["status_in_CCDS"] == "Accepted") & (ccds_df["source"] == "NCBI")]["protein_ID"].values
-
-        # print(self._nm, self._np)
-        if len(self._nm) != 1:
-            self._logger.info("cannot find NM")
-            self._logger.info(ccds_df[["#ccds", "nucleotide_ID", "protein_ID", "status_in_CCDS"]])
-            self._logger.info(self._nm)
-            user_enst = input("Please provide another NM: (type exit to exit) ")
-            if user_enst == "exit":
-                exit(1)
-            self._nm = user_enst
-        if len(self._np) != 1:
-            self._logger.info("cannot find NP")
-            self._logger.info(ccds_df[["#ccds", "nucleotide_ID", "protein_ID", "status_in_CCDS"]])
-            self._logger.info(self._np)
-            user_enst = input("Please provide another NP: (type exit to exit) ")
-            if user_enst == "exit":
-                exit(1)
-            self._np = user_enst
-
-        curCCDS = os.path.join(self._data_path, "CCDS.current.txt")
-        if not os.path.isfile(curCCDS):
-        #     # print(f"ccds file not found, downloading from cCDS..", file=log_file)
-            download = "https://ftp.ncbi.nlm.nih.gov/pub/CCDS/current_human/CCDS.current.txt"
-            cmd = f"wget -O {curCCDS} {download}"
-            os.system(cmd)
-        self._curCCDS = curCCDS
-
-        # read ccds into df
-        ccds_df = pd.read_csv(self._curCCDS, sep="\t")
-        get_cds = ccds_df[ccds_df["ccds_id"] == self._ccds_id]
-
-        if get_cds.empty:
-            raise ValueError(f"{self._ccds_id} not found in CCDS.current.")
-
-        self._cds_loc = get_cds["cds_locations"].tolist()[0]
-        self._cds_loc = self._cds_loc.strip("][").split(", ")
-        self._nc = get_cds["nc_accession"].values.item()
-
-        return 0
-
-    def _get_dna(self, chrom, start, end):
-        """
-        get dna sequences from ucsc genome browser based on
-        chrom, start, end
-        """
-        server="https://api.genome.ucsc.edu/"
-        ext = f"getData/sequence?genome=hg38;chrom={chrom};start={start};end={int(end)+1}"
-        r = requests.get(server+ext, headers={"Content-Type": "application/json"})
-        #
-        while not r.ok:
-              #r.raise_for_status()
-            time.sleep(200)
-            r = requests.get(server+ext, headers={"Content-Type": "application/json"})
-        decoded = r.json()
-        dna_seq = Seq(decoded["dna"])
-        #
-        return dna_seq
+    get_cds = getCDS(humanref_withseq, data_path)
+    get_cds._get_ensembl_dna()
