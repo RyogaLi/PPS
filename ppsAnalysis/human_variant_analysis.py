@@ -111,11 +111,11 @@ class humanAnalysis(object):
                     else:
                         label = "SNP"
                     # track how many variants for each gene (with more than 10 reads mapped to it)
-                    mut_count.append([l[0], l[1], l[3], mut_base,  l[5], mut_counts, info_dict["DP"], label])
+                    mut_count.append([l[0], l[1], l[3],  l[5], mut_base, mut_counts, info_dict["DP"], label])
                     filteredvcf.write(line)
         return mut_count
 
-    def process_mut(self, mut_df):
+    def _process_mut(self, mut_df):
         """
         Based on the coding sequence and protein sequence, determine if the variant is a syn/non-syn variant,
         also call gnomAD API to see if the variant is common
