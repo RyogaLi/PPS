@@ -148,13 +148,25 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         #exit()
 
 
-def read_human_csv(human91_ORFs):
+def read_human91(human91_ORFs):
     humanallORF = pd.read_csv(human91_ORFs)
     humanallORF = humanallORF[['orf_id', 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified', '# mut', 'cds_seq']]
     humanallORF = humanallORF.fillna(-1)
     humanallORF["entrez_gene_id"] = humanallORF["entrez_gene_id"].astype(int)
     humanallORF['orf_name'] = humanallORF['orf_id'].astype(str) + "_" + humanallORF['entrez_gene_id'].astype(str) + "_G0" + humanallORF['Pool group #'].astype(str) + "_" + humanallORF['entrez_gene_symbol'].astype(str)  
 
+    return humanallORF
+
+
+def read_human_ref(human_ref):
+    """
+    human ref with enst/ensg ID
+    """
+    humanallORF = pd.read_csv(human_ref)
+    humanallORF = humanallORF[["ORFID", "ensembl_transcript_id", "ensembl_protein_id", "ensembl_gene_id", "uniprot_AC_iso", "symbol", "entrez_gene_id", "CDS"]]
+
+    humanallORF["entrez_gene_id"] = humanallORF["entrez_gene_id"].astype(int)
+    humanallORF['orf_name'] = humanallORF['entrez_gene_id'].astype(str) + "_" + humanallORF['entrez_gene_symbol'].astype(str)  
     return humanallORF
 
 
@@ -232,7 +244,9 @@ def check_args(arguments):
             raise ValueError("Please also provide reference dir and fastq dir")
 
     human_91ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/20161117_ORFeome91_seqs.csv"
-    orfs = read_human_csv(human_91ORFs)
+    human_ref = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/20180524_DK_ReferenceORFeome_human_withensemblID.csv"
+    #orfs = read_human_csv(human_91ORFs)
+    orfs = read_human_ref(human_ref)
 
     return orfs
 
