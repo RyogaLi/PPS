@@ -50,6 +50,31 @@ class getCDS(object):
                 output_f.write(f"{decoded['id']},{decoded['version']},{decoded['seq']}\n")
         print(missing)
 
+    def _get_ensembl_dna_37(self):
+        """
+        go through the input df, get cds sequence from ensembl
+        """
+        server = "https://grch37.rest.ensembl.org"
+        missing = []
+        output_file = os.path.join(self._data_path, "ensembl_seq_grch37.csv")
+        with open(output_file, "w") as output_f:
+            output_f.write("enst_id,enst_version,cds_seq\n")
+            for enst in self._input_df["ensembl_transcript_id"].tolist():
+
+                enst_id = enst.split(".")[0]
+                ext = f"/sequence/id/{enst_id}?type=cdna"
+
+                r = requests.get(server + ext, headers={"Content-Type": "application/json"})
+
+                if not r.ok:
+                    print(enst)
+                    missing.append(enst)
+                    continue
+                decoded = r.json()
+                output_f.write(f"{decoded['id']},{decoded['version']},{decoded['seq']}\n")
+        print(missing)
+
+
 if __name__ == "__main__":
     humanref_withseq = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/20180524_DK_ReferenceORFeome_human_withensemblID.csv"
     data_path = "/home/rothlab/rli/02_dev/06_pps_pipeline/publicdb"
