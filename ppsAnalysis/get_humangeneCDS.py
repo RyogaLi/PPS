@@ -80,4 +80,4 @@ if __name__ == "__main__":
     data_path = "/home/rothlab/rli/02_dev/06_pps_pipeline/publicdb"
 
     get_cds = getCDS(humanref_withseq, data_path)
-    get_cds._get_ensembl_dna()
+    get_cds._get_ensembl_dna_37()
