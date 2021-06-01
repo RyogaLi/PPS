@@ -39,7 +39,7 @@ class getCDS(object):
             output_f.write("enst_id,enst_version,cds_seq\n")
             for enst in self._input_df["ensembl_transcript_id"].tolist():
                 enst_id = enst.split(".")[0]
-                ext = f"/sequence/id/{enst_id}?type=cdna"
+                ext = f"/sequence/id/{enst_id}?type=cds"
                 r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
 
                 if not r.ok:
@@ -66,7 +66,7 @@ class getCDS(object):
             for enst in self._input_df["ensembl_transcript_id"].tolist():
 
                 enst_id = enst.split(".")[0]
-                ext = f"/sequence/id/{enst_id}?type=cdna"
+                ext = f"/sequence/id/{enst_id}?type=cds"
 
                 r = requests.get(server + ext, headers={"Content-Type": "application/json"})
 
