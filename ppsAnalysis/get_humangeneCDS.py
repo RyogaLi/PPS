@@ -39,7 +39,7 @@ class getCDS(object):
             output_f.write("enst_id,enst_version,cds_seq\n")
             for enst in self._input_df["ensembl_transcript_id"].tolist():
                 enst_id = enst.split(".")[0]
-                ext = f"/sequence/id/{enst_id}?type=cdna"
+                ext = f"/sequence/id/{enst_id}?type=cds"
                 r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
 
                 if not r.ok:
@@ -66,7 +66,7 @@ class getCDS(object):
             for enst in self._input_df["ensembl_transcript_id"].tolist():
 
                 enst_id = enst.split(".")[0]
-                ext = f"/sequence/id/{enst_id}?type=cdna"
+                ext = f"/sequence/id/{enst_id}?type=cds"
 
                 r = requests.get(server + ext, headers={"Content-Type": "application/json"})
 
@@ -93,12 +93,12 @@ class getCDS(object):
         # load grch37
         grch37_df = pd.read_csv(grch37_file)
         grch37_df.columns = ["enst37", "enst37_version", "cds_seq37"]
-        grch37_df["ensembl_transcript_grch37"] = grch37_df['enst37'].astype(str) + "." + grch37_df['enst37_version']
+        grch37_df["ensembl_transcript_grch37"] = grch37_df['enst37'].astype(str) + "." + grch37_df['enst37_version'].astype(str)
 
         # load grch38
         grch38_df = pd.read_csv(grch38_file)
         grch38_df.columns = ["enst38", "enst38_version", "cds_seq38"]
-        grch38_df["ensembl_transcript_grcht38"] = grch38_df['enst38'].astype(str) + "." + grch38_df['enst38_version']
+        grch38_df["ensembl_transcript_grcht38"] = grch38_df['enst38'].astype(str) + "." + grch38_df['enst38_version'].astype(str)
 
         # merge cds to input file
         merge = pd.merge(self._input_df, grch37_df, how="left", left_on = "enst", right_on= "enst37")
