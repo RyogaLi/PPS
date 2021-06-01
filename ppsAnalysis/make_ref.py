@@ -138,6 +138,23 @@ def make_human_fasta(output):
         os.system(cmd)
 
 
+def make_human_fasta_ensembl(output):
+    """
+    Make reference fasta file with ensembl ref seq
+    :return:
+    """
+    ref_91 = "/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/20161117_ORFeome91_seqs.csv"
+    ref_ensembl = "/home/rothlab/rli/02_dev/06_pps_pipeline/publicdb/merged_ensembl_sequence.csv"
+    ref_df_91 = pd.read_csv(ref_91)
+    ref_df_ensembl = pd.read_csv(ref_ensembl)
+    ref_df_91 = ref_df_91.fillna(-1)
+
+    # merge this two df together
+    # check if there are NAs in entrez gene ID and entrez gene symbol
+    print(ref_df_91[(ref_df_91["entrez_gene_id"].isnull()) | (ref_df_91["entrez_gene_symbol"].isnull())])
+    print(ref_df_ensembl[(ref_df_ensembl["symbol"].isnull()) | (ref_df_ensembl["entrez_gene"].isnull())])
+
+
 
 def main(mode, output):
     """
