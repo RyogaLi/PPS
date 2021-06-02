@@ -179,9 +179,11 @@ def make_human_fasta_ensembl(output):
         with open(group_fasta, "w") as g_fasta:
             for index, row in subset.iterrows():
                 id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
-                seq = row["cds_seq37_filled"] + "\n"
+                # remove stop codon
+                seq = row["cds_seq37_filled"].values[0][:-3] + "\n"
                 g_fasta.write(id_line)
                 g_fasta.write(seq)
+
         # make fasta for grch38
         # for missing values in cds_seq38, fill with original cds_seq
         merged_df["cds_seq38_filled"] = merged_df["cds_seq38"].fillna(merged_df["cds_seq"])
@@ -191,7 +193,8 @@ def make_human_fasta_ensembl(output):
         with open(group_fasta, "w") as g_fasta:
             for index, row in subset.iterrows():
                 id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
-                seq = row["cds_seq38_filled"] + "\n"
+                # remove stop codon
+                seq = row["cds_seq38_filled"].values[0][:-3] + "\n"
                 g_fasta.write(id_line)
                 g_fasta.write(seq)
 
@@ -207,6 +210,31 @@ def make_human_fasta_ensembl(output):
         f_id = os.path.basename(f).split(".")[0]
         cmd = f"bowtie2-build {f} {grch38_output}/{f_id}"
         os.system(cmd)
+
+
+def compare_human_ref(output):
+    """
+
+    :param output:
+    :return:
+    """
+    """
+        Make reference fasta file with ensembl ref seq
+        :return:
+        """
+    ref_91 = "/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/20161117_ORFeome91_seqs.csv"
+    ref_ensembl = "/home/rothlab/rli/02_dev/06_pps_pipeline/publicdb/merged_ensembl_sequence.csv"
+    ref_df_91 = pd.read_csv(ref_91)
+    ref_df_ensembl = pd.read_csv(ref_ensembl)
+    ref_df_91 = ref_df_91.fillna(-1)
+    print(ref_df_91.shape)
+    # merge this two df together
+    # check if there are NAs in entrez gene ID and entrez gene symbol
+    print(ref_df_91[ref_df_91[["entrez_gene_id", "entrez_gene_symbol"]].duplicated()])
+    ref_df_ensembl = ref_df_ensembl.drop_duplicates(subset=["entrez_gene_id", "symbol"])
+    print(ref_df_ensembl.shape)
+    merged_df = pd.merge(ref_df_91, ref_df_ensembl, left_on=["entrez_gene_id", "entrez_gene_symbol"],
+                         right_on=["entrez_gene_id", "symbol"], how="left")
 
 
 def main(mode, output):
