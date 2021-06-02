@@ -56,7 +56,7 @@ def variants_main(arguments):
             # this is developped for GALEN cluster
             sh_file = os.path.join(sub_output, f"{fastq_ID}.sh")
             f = os.path.join(arguments.fastq, f)
-            alignment_obj = ppsAnalysis.alignment.Alignment(arguments.ref, arguments.mode, f, sub_output, sh_file, align_log)
+            alignment_obj = ppsAnalysis.alignment.Alignment(arguments.ref, "human", f, sub_output, sh_file, align_log)
             # the main function writes to the sh file ans submit the file to cluster
             # return job ID
             at = 9
@@ -69,6 +69,7 @@ def variants_main(arguments):
             main_logger.info("Alignment jobs all finished")
 
     parse_vcf_files_human(output, file_list, arguments, orfs, main_logger)
+
 
 def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
@@ -176,7 +177,7 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
     """
     analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df)
     full_cover_genes, gene_dict, ref_dict = analysis.get_full_cover()
-
+    print(raw_vcf_file)
     # all the genes with full coverage
     n_fully_aligned = len(full_cover_genes.keys())
     # all genes in ref fasta
@@ -210,7 +211,7 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
     # merge mut_df with fully covered
     merge_mut = pd.merge(mut_df, fully_covered, how="left", on="gene_ID")
     merge_mut_fully_covered = merge_mut[~merge_mut["gene_len"].isnull()]
-    processed_mut = analysis.process_mut(mut_df)
+    processed_mut = analysis._process_mut(mut_df)
     # from fully aligned genes, select those with any mutations
     fully_aligned_with_mut = pd.merge(fully_covered, processed_mut, how="left", left_on="gene_ID",
                                       right_on="gene_ID")
@@ -244,9 +245,9 @@ def check_args(arguments):
             raise ValueError("Please also provide reference dir and fastq dir")
 
     human_91ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/20161117_ORFeome91_seqs.csv"
-    human_ref = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/20180524_DK_ReferenceORFeome_human_withensemblID.csv"
-    #orfs = read_human_csv(human_91ORFs)
-    orfs = read_human_ref(human_ref)
+    #human_ref = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/20180524_DK_ReferenceORFeome_human_withensemblID.csv"
+    orfs = read_human91(human_91ORFs)
+    #orfs = read_human_ref(human_ref)
 
     return orfs
 

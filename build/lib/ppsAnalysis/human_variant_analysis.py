@@ -111,11 +111,11 @@ class humanAnalysis(object):
                     else:
                         label = "SNP"
                     # track how many variants for each gene (with more than 10 reads mapped to it)
-                    mut_count.append([l[0], l[1], l[3], mut_base,  l[5], mut_counts, info_dict["DP"], label])
+                    mut_count.append([l[0], l[1], l[3], mut_base, l[5], mut_counts, info_dict["DP"], label])
                     filteredvcf.write(line)
         return mut_count
 
-    def process_mut(self, mut_df):
+    def _process_mut(self, mut_df):
         """
         Based on the coding sequence and protein sequence, determine if the variant is a syn/non-syn variant,
         also call gnomAD API to see if the variant is common
@@ -124,7 +124,7 @@ class humanAnalysis(object):
         """
         # select subset of orfs with mut on this plate
         merge_mut = pd.merge(mut_df, self._orfs, how="left", left_on="gene_ID", right_on="orf_name")
-
+        print(merge_mut)
         # for each pos, assign codon
         codon = [(int(i) // 3) + 1 if (int(i) % 3 != 0) else int(i) / 3 for i in merge_mut["pos"].tolist()]
         merge_mut["codon"] = codon
@@ -132,6 +132,7 @@ class humanAnalysis(object):
         # for each group, assign codon
         # SNP
         snp = merge_mut[merge_mut["label"] == "SNP"]
+        print(merge_mut[[ 'pos', 'ref', 'alt', 'codon']])
         grouped = snp.groupby(["gene_ID", "codon"])
         table = {
             'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
@@ -159,6 +160,9 @@ class humanAnalysis(object):
             if "N" in codon_seq:
                 track_syn.append("NA")
                 continue
+            print(name, group)
+            print(group["cds_seq"])
+            print(codon_seq)
             pro = table[codon_seq]
             mut_codon = list(codon_seq)
             if group.shape[0] == 1:

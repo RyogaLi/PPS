@@ -151,8 +151,62 @@ def make_human_fasta_ensembl(output):
 
     # merge this two df together
     # check if there are NAs in entrez gene ID and entrez gene symbol
-    print(ref_df_91[(ref_df_91["entrez_gene_id"].isnull()) | (ref_df_91["entrez_gene_symbol"].isnull())])
-    print(ref_df_ensembl[(ref_df_ensembl["symbol"].isnull()) | (ref_df_ensembl["entrez_gene"].isnull())])
+    print(ref_df_91.shape)
+    merged_df = pd.merge(ref_df_91, ref_df_ensembl, left_on=["entrez_gene_id", "entrez_gene_symbol"], right_on=["entrez_gene_id", "symbol"], how="left")
+    
+    # make grch37 and 38 output dir if not exist
+    grch37_output = os.path.join(output, "grch37")
+    if not os.path.isdir(grch37_output):
+        os.makedir(grch37_output)
+
+    grch38_output = os.path.join(output, "grch38")
+    if not os.path.isdir(grch38_output):
+        os.makedir(grch38_output)
+
+    
+    # make group sepecific fasta
+    # get all groups
+    groups = merged_df["Pool group #"].unique().tolist()
+    for g in groups:
+        # make fasta for grch37
+        # for missing values in cds_seq37, fill with original cds_seq
+        merged_df["cds_seq37_filled"] = merged_df["cds_seq37"].fillna(merged_df["cds_seq"])
+        group_fasta = os.path.join(grch37_output, f"group_ref_G0{g}.fasta")
+        # select subset of orfs belongs to this group
+        subset = merged_df[merged_df["Pool group #"] == g]
+        with open(group_fasta, "w") as g_fasta:
+            for index, row in subset.iterrows():
+                id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
+                seq = row["cds_seq37_filled"] + "\n"
+                g_fasta.write(id_line)
+                g_fasta.write(seq)
+        # make fasta for grch38
+        # for missing values in cds_seq38, fill with original cds_seq
+        merged_df["cds_seq38_filled"] = merged_df["cds_seq38"].fillna(merged_df["cds_seq"])
+        group_fasta = os.path.join(grch38_output, f"grch38group_ref_G0{g}.fasta")
+        # select subset of orfs belongs to this group
+        subset = merged_df[merged_df["Pool group #"] == g]
+        with open(group_fasta, "w") as g_fasta:
+            for index, row in subset.iterrows():
+                id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
+                seq = row["cds_seq37_filled"] + "\n"
+                g_fasta.write(id_line)
+                g_fasta.write(seq)
+
+
+
+    # build bowtie2 index for later use 
+    all_fasta = glob.glob(f"{grch37_output}/*.fasta")
+    for f in all_fasta:
+        f_id = os.path.basename(f).split(".")[0]
+        cmd = f"bowtie2-build {f} {grch37_output}/{f_id}"
+        os.system(cmd)
+
+    all_fasta = glob.glob(f"{grch38_output}/*.fasta")
+    for f in all_fasta:
+        f_id = os.path.basename(f).split(".")[0]
+        cmd = f"bowtie2-build {f} {grch38_output}/{f_id}"
+        os.system(cmd)
 
 
 
@@ -164,7 +218,7 @@ def main(mode, output):
     :return: None
     """
     if mode == "human":
-        make_human_fasta(output)
+        make_human_fasta_ensembl(output)
     else:
         make_yeast_fasta(output)
 
