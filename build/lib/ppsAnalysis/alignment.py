@@ -42,11 +42,11 @@ class Alignment(object):
 
 
         if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
-            r1_cmd = f"bowtie2 -a -p 16 --local -x {reference} -U {self._sample} -S {sam_file}"
+            r1_cmd = f"bowtie2 -a -p 4 --local -x {reference} -U {self._sample} -S {sam_file}"
             # r2_cmd = f"bowtie2 -a -p 16 --local -x {self._reference} -U {r2} -S {r2_sam_file}"
 
         elif self._setting == "SENSITIVE": # strict bowtie2 settings for alignment, more info in README
-            r1_cmd = f"bowtie2 -a -p 16 --local --very-sensitive-local -x {reference} -U {self._sample} -S {sam_file}"
+            r1_cmd = f"bowtie2 -a -p 4 --local --very-sensitive-local -x {reference} -U {self._sample} -S {sam_file}"
             # r2_cmd = f"bowtie2 -a -p 16 --local --very-sensitive-local -x {self._reference} -U {r2} -S {r2_sam_file}"
 
         else:
@@ -93,7 +93,7 @@ class Alignment(object):
         log_f = os.path.join(self._output, os.path.basename(self._sh_file).replace(".sh", ""))
         time_request = f"0{at}:00:00"
         header = f"#!/bin/bash\n#SBATCH --time={time_request}\n#SBATCH --job-name={self._basename}\n#SBATCH " \
-                 f"--cpus-per-task=16\n#SBATCH --error={log_f}-%j.log\n#SBATCH --output={log_f}-%j.log\n"
+                 f"--cpus-per-task=4\n#SBATCH --error={log_f}-%j.log\n#SBATCH --output={log_f}-%j.log\n"
         # write header to sh file
         with open(self._sh_file, "w") as sh:
             sh.write(header)

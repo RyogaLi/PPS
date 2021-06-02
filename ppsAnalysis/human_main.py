@@ -104,7 +104,7 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
-        all_log["fastq_ID"] += [fastq_ID] * 2
+        all_log["fastq_ID"] += [fastq_ID]
 
         # for each vcf file, get how many genes are fully aligned
         # get only the subset that are in the group 
@@ -113,7 +113,7 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
-            all_found, fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df)
+            all_found, fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, "grch37")
             fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
             all_found_file = os.path.join(sub_output, "all_found_groupSpecORFs.csv")
@@ -126,7 +126,7 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
             genes_found.append(stats_list)
             mut_df["sample"] = fastq_ID
             all_mut_df.append(mut_df)
-
+    print(all_log)
     # process all log
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
@@ -173,6 +173,9 @@ def read_human_ref(human_ref):
     # check if there are NAs in entrez gene ID and entrez gene symbol
     merged_df = pd.merge(ref_df_91, ref_df_ensembl, left_on=["entrez_gene_id", "entrez_gene_symbol"],
                          right_on=["entrez_gene_id", "symbol"], how="left")
+    merged_df["grch37_filled"] = merged_df["cds_seq37"].fillna(merged_df["cds_seq"])
+    merged_df["grch38_filled"] = merged_df["cds_seq38"].fillna(merged_df["cds_seq"])
+
     merged_df["entrez_gene_id"] = merged_df["entrez_gene_id"].astype(int)
     merged_df['orf_name'] = merged_df['orf_id'].astype(str) + "_" + merged_df['entrez_gene_id'].astype(str) + "_G0" + merged_df['Pool group #'].astype(str) + "_" + merged_df['entrez_gene_symbol'].astype(str)
 
@@ -184,11 +187,11 @@ def read_human_ref(human_ref):
     return merged_df
 
 
-def analysisHuman(raw_vcf_file, fastq_ID, orfs_df):
+def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, ref):
     """
 
     """
-    analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df)
+    analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df, ref)
     full_cover_genes, gene_dict, ref_dict = analysis.get_full_cover()
     print(raw_vcf_file)
     # all the genes with full coverage

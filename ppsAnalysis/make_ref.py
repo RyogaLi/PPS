@@ -149,10 +149,12 @@ def make_human_fasta_ensembl(output):
     ref_df_91 = pd.read_csv(ref_91)
     ref_df_ensembl = pd.read_csv(ref_ensembl)
     ref_df_91 = ref_df_91.fillna(-1)
-
+    print(ref_df_91.shape)
     # merge this two df together
     # check if there are NAs in entrez gene ID and entrez gene symbol
-    print(ref_df_91.shape)
+    print(ref_df_91[ref_df_91[["entrez_gene_id", "entrez_gene_symbol"]].duplicated()])
+    ref_df_ensembl = ref_df_ensembl.drop_duplicates(subset=["entrez_gene_id", "symbol"])
+    print(ref_df_ensembl.shape)
     merged_df = pd.merge(ref_df_91, ref_df_ensembl, left_on=["entrez_gene_id", "entrez_gene_symbol"], right_on=["entrez_gene_id", "symbol"], how="left")
     
     # make grch37 and 38 output dir if not exist
@@ -189,7 +191,7 @@ def make_human_fasta_ensembl(output):
         with open(group_fasta, "w") as g_fasta:
             for index, row in subset.iterrows():
                 id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
-                seq = row["cds_seq37_filled"] + "\n"
+                seq = row["cds_seq38_filled"] + "\n"
                 g_fasta.write(id_line)
                 g_fasta.write(seq)
 

@@ -14,7 +14,7 @@ import time
 
 class humanAnalysis(object):
 
-    def __init__(self, input_vcf, basename, orfs_df):
+    def __init__(self, input_vcf, basename, orfs_df, ref):
         """
         Take vcf file from input dir
         :param input_: Input dir contains vcf files, sam files and bam files
@@ -24,7 +24,13 @@ class humanAnalysis(object):
         self._basename = basename
         # contains all the targeted orfs for this sample
         self._orfs = orfs_df
-
+        if ref == "grch37":
+            self._seq_col = "grch37_filled"
+        elif ref == "grch38":
+            self._seq_col = "grch38_filled"
+        else:
+            self._seq_col = "cds_seq"
+            
     def get_full_cover(self):
         """
         Get a dictionary of gene names which are fully covered(aligned) in vcf file
@@ -124,7 +130,6 @@ class humanAnalysis(object):
         """
         # select subset of orfs with mut on this plate
         merge_mut = pd.merge(mut_df, self._orfs, how="left", left_on="gene_ID", right_on="orf_name")
-        print(merge_mut)
         # for each pos, assign codon
         codon = [(int(i) // 3) + 1 if (int(i) % 3 != 0) else int(i) / 3 for i in merge_mut["pos"].tolist()]
         merge_mut["codon"] = codon
@@ -155,14 +160,11 @@ class humanAnalysis(object):
         # go through each codon, change the base
         track_syn = []
         for name, group in grouped:
-            codon_seq = group["cds_seq"].values[0][
+            codon_seq = group[self._seq_col].values[0][
                         int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
             if "N" in codon_seq:
                 track_syn.append("NA")
                 continue
-            print(name, group)
-            print(group["cds_seq"])
-            print(codon_seq)
             pro = table[codon_seq]
             mut_codon = list(codon_seq)
             if group.shape[0] == 1:
