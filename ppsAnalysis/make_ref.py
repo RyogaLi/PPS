@@ -180,7 +180,7 @@ def make_human_fasta_ensembl(output):
             for index, row in subset.iterrows():
                 id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
                 # remove stop codon
-                seq = row["cds_seq37_filled"].values[0][:-3] + "\n"
+                seq = row["cds_seq37_filled"][:-3] + "\n"
                 g_fasta.write(id_line)
                 g_fasta.write(seq)
 
@@ -194,7 +194,7 @@ def make_human_fasta_ensembl(output):
             for index, row in subset.iterrows():
                 id_line = f">{row['orf_id']}_{int(row['entrez_gene_id'])}_G0{row['Pool group #']}_{row['entrez_gene_symbol']}\n"
                 # remove stop codon
-                seq = row["cds_seq38_filled"].values[0][:-3] + "\n"
+                seq = row["cds_seq38_filled"][:-3] + "\n"
                 g_fasta.write(id_line)
                 g_fasta.write(seq)
 
