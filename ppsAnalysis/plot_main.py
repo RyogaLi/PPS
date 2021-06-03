@@ -309,8 +309,9 @@ class PlotObjYeast(object):
         v_counts.loc[v_counts["v_count"] > 2, "category"] = "3+"
 
         v_plot = v_counts[["db", "category"]].value_counts().to_frame().reset_index()
-        print(v_plot)
         v_plot.columns = ["subset", "category", "n_gene"]
+        v_plot["subset"] = v_plot["subset"].replace({"SGD": "Supp-SGD", "PROTGEN": "Supp-PROT"})
+        print(v_plot)
         sns.set_theme(style="whitegrid", font_scale=1.5)
         plt.figure(figsize=(8, 6))
         g = sns.barplot(data=v_plot, x="category", y="n_gene", hue="subset", palette="Blues")
@@ -431,6 +432,36 @@ class PlotObjHuman(object):
                       linewidth=1, color="black")
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "./allORFs_venn3.png"))
+        plt.close()
+
+        all_mut = pd.read_csv(all_mut_summary)
+        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
+        # also filter out gnomad common variants
+        # all_mut.exome = all_mut.exome.fillna("{'af': 0.000000001}").astype(str)
+        # all_mut.genome = all_mut.genome.fillna("{'af': 0.000000001}").astype(str)
+        # all_mut["exome_af"] = pd.DataFrame(all_mut.exome.values.tolist())
+        all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        all_mut["genome_af"] =  all_mut["genome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        print(all_mut[all_mut["exome"].notnull()][["exome", "exome_af"]])
+        # print(all_mut[all_mut["af"].notnull()]["af"])
+        all_mut["filled_af"] = all_mut["genome_af"].fillna(all_mut["exome_af"])
+
+        all_mut["filled_af"] = all_mut["filled_af"].astype(float)
+        all_mut["filled_af"] = all_mut["filled_af"].fillna(0.0000001)
+        print(all_mut[all_mut["filled_af"].notnull()])
+        # filter common variants
+        all_mut = all_mut[all_mut["filled_af"] < 0.001]
+
+        all_mut_genes = all_mut["gene_ID"].dropna().unique()
+        plt.figure(figsize=(10, 5))
+        vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)],
+                   set_labels=(f"all ORFs: {len(all_targeted_unique_db)}", f"fully covered: {len(all_found_genes)}",
+                               f"fully covered; \nwith non-syn mut; \nremoved gnomAD common variants:\n"
+                               f" {len(all_mut_genes)}"))
+        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], linestyle='dashed',
+                      linewidth=1, color="black")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "./allORFs_venn3_onlygnomad.png"))
         plt.close()
 
 
