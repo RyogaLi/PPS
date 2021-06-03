@@ -104,7 +104,7 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
-        all_log["fastq_ID"] += [fastq_ID]
+        all_log["fastq_ID"] += [fastq_ID] *2
 
         # for each vcf file, get how many genes are fully aligned
         # get only the subset that are in the group 

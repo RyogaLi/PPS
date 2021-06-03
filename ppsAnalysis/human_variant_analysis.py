@@ -212,13 +212,11 @@ class humanAnalysis(object):
         for gene in gene_list:
             gnomAD_variants = self._get_gnomAD(gene)
             pps_variants = joined[joined["gene_ID"] == gene]
-            merge_df = pd.merge(pps_variants, gnomAD_variants, how="left", left_on="pos", right_on="cds_pos", suffixes=["_pps", "_gnomad"])
+            merge_df = pd.merge(pps_variants, gnomAD_variants[["ref", "alt", "cds_pos", "exome", "genome"]], how="left", left_on=["ref", "alt", "pos"], right_on=["ref", "alt", "cds_pos"], suffixes=["_pps", "_gnomad"])
             merge_gnomad.append(merge_df)
             # label variants with matching gnomAD ref and if they are common
-            print(merge_df)
-            print(merge_df.columns)
-            exit()
         joined = pd.concat(merge_gnomad)
+        
         return joined
 
 
@@ -245,6 +243,9 @@ class humanAnalysis(object):
             genome {
             af
             }
+            exome {
+            af
+            }
             }
             }
 
@@ -253,18 +254,19 @@ class humanAnalysis(object):
         # send request
         r = requests.post("https://gnomad.broadinstitute.org/api", json={'query': q})
         while r.status_code != 200:
-            time.sleep(300)
+            print(r.status_code)
+            time.sleep(60)
             r = requests.post("https://gnomad.broadinstitute.org/api", json={'query': q})
 
         variants = r.json()
         if variants["data"]["gene"] is None:
-            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'cds_pos'])
+            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'exome', 'cds_pos'])
 
         variants_dict = variants["data"]["gene"]["variants"]
         # convert response to dataframe
         df = pd.DataFrame.from_dict(variants_dict)
         if df.empty:
-            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'cds_pos'])
+            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'exome', 'cds_pos'])
 
         coding_variants = df[df.hgvsp.notnull()]
         # extract cds position using regex

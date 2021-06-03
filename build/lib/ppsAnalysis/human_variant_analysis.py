@@ -137,7 +137,6 @@ class humanAnalysis(object):
         # for each group, assign codon
         # SNP
         snp = merge_mut[merge_mut["label"] == "SNP"]
-        print(merge_mut[[ 'pos', 'ref', 'alt', 'codon']])
         grouped = snp.groupby(["gene_ID", "codon"])
         table = {
             'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
@@ -178,7 +177,6 @@ class humanAnalysis(object):
                     grch37_refseq = group["grch37_filled"].values[0][:-3]
                     codon_37 = grch37_refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
                     if mut_codon[mut_pos] == codon_37[mut_pos]:
-                        print("here")
                         track_syn.append("mapped_diffref")
                     else:
                         track_syn.append("non_syn")
@@ -209,14 +207,16 @@ class humanAnalysis(object):
         joined = pd.concat([snp, indel])
 
         # get gnomad variants for genes in the table
-        # merge_gnomad = []
-        #gene_list = joined.gene_ID.unique().tolist()
-        #for gene in gene_list:
-        #    gnomAD_variants = self._get_gnomAD(gene)
-        #    pps_variants = joined[joined["gene_ID"] == gene]
-        #    merge_df = pd.merge(pps_variants, gnomAD_variants, how="left", left_on="pos", right_on="cds_pos", suffixes=["_pps", "_gnomad"])
-        #    merge_gnomad.append(merge_df)
-        #joined = pd.concat(merge_gnomad)
+        merge_gnomad = []
+        gene_list = joined.gene_ID.unique().tolist()
+        for gene in gene_list:
+            gnomAD_variants = self._get_gnomAD(gene)
+            pps_variants = joined[joined["gene_ID"] == gene]
+            merge_df = pd.merge(pps_variants, gnomAD_variants[["ref", "alt", "cds_pos", "exome", "genome"]], how="left", left_on=["ref", "alt", "pos"], right_on=["ref", "alt", "cds_pos"], suffixes=["_pps", "_gnomad"])
+            merge_gnomad.append(merge_df)
+            # label variants with matching gnomAD ref and if they are common
+        joined = pd.concat(merge_gnomad)
+        
         return joined
 
 
@@ -243,6 +243,9 @@ class humanAnalysis(object):
             genome {
             af
             }
+            exome {
+            af
+            }
             }
             }
 
@@ -251,25 +254,25 @@ class humanAnalysis(object):
         # send request
         r = requests.post("https://gnomad.broadinstitute.org/api", json={'query': q})
         while r.status_code != 200:
-            time.sleep(300)
+            print(r.status_code)
+            time.sleep(60)
             r = requests.post("https://gnomad.broadinstitute.org/api", json={'query': q})
 
         variants = r.json()
         if variants["data"]["gene"] is None:
-            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'cds_pos'])
+            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'exome', 'cds_pos'])
 
         variants_dict = variants["data"]["gene"]["variants"]
         # convert response to dataframe
         df = pd.DataFrame.from_dict(variants_dict)
         if df.empty:
-            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'cds_pos'])
+            return pd.DataFrame(columns=['consequence', 'pos', 'variantId', 'hgvs', 'ref', 'alt', 'hgvsc', 'hgvsp', 'genome', 'exome', 'cds_pos'])
 
         coding_variants = df[df.hgvsp.notnull()]
         # extract cds position using regex
         coding_variants["cds_pos"] = coding_variants['hgvsc'].str.extract('(\d+)', expand=True)
         return coding_variants
 
-        
 
     def _get_clinvar(self):
         """
