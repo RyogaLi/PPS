@@ -2,7 +2,7 @@
 
 # Author: Roujia Li
 # email: Roujia.li@mail.utoronto.ca
-
+import ast
 import sys
 sys.path.append('..')
 import os
@@ -403,16 +403,29 @@ class PlotObjHuman(object):
 
 
         all_mut = pd.read_csv(all_mut_summary)
-        print(all_mut)
-        print(all_mut.columns)
         all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA") & (all_mut["type"] != "mapped_diffref")]
-        all_mut = all_mut[~all_mut["gene_len"].isnull()]
+        # also filter out gnomad common variants
+        # all_mut.exome = all_mut.exome.fillna("{'af': 0.000000001}").astype(str)
+        # all_mut.genome = all_mut.genome.fillna("{'af': 0.000000001}").astype(str)
+        # all_mut["exome_af"] = pd.DataFrame(all_mut.exome.values.tolist())
+        all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        all_mut["genome_af"] =  all_mut["genome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        print(all_mut[all_mut["exome"].notnull()][["exome", "exome_af"]])
+        # print(all_mut[all_mut["af"].notnull()]["af"])
+        all_mut["filled_af"] = all_mut["genome_af"].fillna(all_mut["exome_af"])
+
+        all_mut["filled_af"] = all_mut["filled_af"].astype(float)
+        all_mut["filled_af"] = all_mut["filled_af"].fillna(0.0000001)
+        print(all_mut[all_mut["filled_af"].notnull()])
+        # filter common variants
+        all_mut = all_mut[all_mut["filled_af"] < 0.001]
+
         all_mut_genes = all_mut["gene_ID"].dropna().unique()
         plt.figure(figsize=(10, 5))
         vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)],
                    set_labels=(f"all ORFs: {len(all_targeted_unique_db)}", f"fully covered: {len(all_found_genes)}",
                                f"fully covered; \nwith non-syn mut; \nfiltered variants based on latest ENSEMBL "
-                               f"refseq:\n"
+                               f"refseq; \nremoved gnomAD common variants:\n"
                                f" {len(all_mut_genes)}"))
         venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], linestyle='dashed',
                       linewidth=1, color="black")
