@@ -405,13 +405,15 @@ class PlotObjHuman(object):
         all_mut = pd.read_csv(all_mut_summary)
         print(all_mut)
         print(all_mut.columns)
-        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
+        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA") & (all_mut["type"] != "mapped_diffref")]
         all_mut = all_mut[~all_mut["gene_len"].isnull()]
         all_mut_genes = all_mut["gene_ID"].dropna().unique()
-        plt.figure(figsize=(8, 5))
+        plt.figure(figsize=(10, 5))
         vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)],
                    set_labels=(f"all ORFs: {len(all_targeted_unique_db)}", f"fully covered: {len(all_found_genes)}",
-                               f"fully covered; \nwith non-syn mut: {len(all_mut_genes)}"))
+                               f"fully covered; \nwith non-syn mut; \nfiltered variants based on latest ENSEMBL "
+                               f"refseq:\n"
+                               f" {len(all_mut_genes)}"))
         venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], linestyle='dashed',
                       linewidth=1, color="black")
         plt.tight_layout()

@@ -207,14 +207,18 @@ class humanAnalysis(object):
         joined = pd.concat([snp, indel])
 
         # get gnomad variants for genes in the table
-        # merge_gnomad = []
-        #gene_list = joined.gene_ID.unique().tolist()
-        #for gene in gene_list:
-        #    gnomAD_variants = self._get_gnomAD(gene)
-        #    pps_variants = joined[joined["gene_ID"] == gene]
-        #    merge_df = pd.merge(pps_variants, gnomAD_variants, how="left", left_on="pos", right_on="cds_pos", suffixes=["_pps", "_gnomad"])
-        #    merge_gnomad.append(merge_df)
-        #joined = pd.concat(merge_gnomad)
+        merge_gnomad = []
+        gene_list = joined.gene_ID.unique().tolist()
+        for gene in gene_list:
+            gnomAD_variants = self._get_gnomAD(gene)
+            pps_variants = joined[joined["gene_ID"] == gene]
+            merge_df = pd.merge(pps_variants, gnomAD_variants, how="left", left_on="pos", right_on="cds_pos", suffixes=["_pps", "_gnomad"])
+            merge_gnomad.append(merge_df)
+            # label variants with matching gnomAD ref and if they are common
+            print(merge_df)
+            print(merge_df.columns)
+            exit()
+        joined = pd.concat(merge_gnomad)
         return joined
 
 
@@ -267,7 +271,6 @@ class humanAnalysis(object):
         coding_variants["cds_pos"] = coding_variants['hgvsc'].str.extract('(\d+)', expand=True)
         return coding_variants
 
-        
 
     def _get_clinvar(self):
         """
