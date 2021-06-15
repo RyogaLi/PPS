@@ -104,8 +104,8 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
-        all_log["fastq_ID"] += [fastq_ID] *2
-
+        all_log["fastq_ID"] += [fastq_ID]
+        print(all_log)
         # for each vcf file, get how many genes are fully aligned
         # get only the subset that are in the group 
         group_ID = fastq_ID.split("_")[-1][-1]
@@ -113,7 +113,7 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
-            all_found, fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, "grch37")
+            all_found, fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, "grch38")
             fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
             all_found_file = os.path.join(sub_output, "all_found_groupSpecORFs.csv")

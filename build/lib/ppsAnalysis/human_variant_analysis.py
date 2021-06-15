@@ -159,11 +159,13 @@ class humanAnalysis(object):
         # go through each codon, change the base
         track_syn = []
         for name, group in grouped:
-            codon_seq = group["cds_seq"].values[0][
+            codon_seq = group[self._seq_col].values[0][
                         int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
             if "N" in codon_seq:
                 track_syn.append("NA")
                 continue
+            print(codon_seq)
+            print(self._seq_col)
             pro = table[codon_seq]
             mut_codon = list(codon_seq)
             if group.shape[0] == 1:
@@ -173,13 +175,13 @@ class humanAnalysis(object):
                 if pro == mut_pro:
                     track_syn.append("syn")
                 else:
-                    # check if this maps the grch37 reference sequence
-                    grch37_refseq = group["grch37_filled"].values[0][:-3]
-                    codon_37 = grch37_refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
-                    if mut_codon[mut_pos] == codon_37[mut_pos]:
-                        track_syn.append("mapped_diffref")
-                    else:
-                        track_syn.append("non_syn")
+                    # # check if this maps the grch37 reference sequence
+                    # grch37_refseq = group["grch37_filled"].values[0][:-3]
+                    # codon_37 = grch37_refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
+                    # if mut_codon[mut_pos] == codon_37[mut_pos]:
+                    #     track_syn.append("mapped_diffref")
+                    # else:
+                    track_syn.append("non_syn")
             else: # two or three variants in the same codon 
                 group["mut_pos"] = group["pos"].astype(int) % 3 - 1
                 for i, r in group.iterrows():
@@ -190,13 +192,17 @@ class humanAnalysis(object):
                 else:
                     # get grch37 codon 
                     # check if this maps the grch37 reference sequence
-                    grch37_refseq = group["grch37_filled"].values[0][:-3]
-                    codon_37 = grch37_refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
-
-                    if "".join(mut_codon) == codon_37:
-                        track_syn += ["mapped_diffref"] * group["mut_pos"].shape[0]
-                    else:
-                        track_syn += ["non_syn"] * group["mut_pos"].shape[0]
+                    # grch37_refseq = group["grch37_filled"].values[0][:-3]
+                    # codon_37 = grch37_refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
+                    #
+                    # if "".join(mut_codon) == codon_37:
+                    #     track_syn += ["mapped_diffref"] * group["mut_pos"].shape[0]
+                    # else:
+                    track_syn += ["non_syn"] * group["mut_pos"].shape[0]
+            print(pro)
+            print(mut_pro)
+            print(group[["ref", "alt", "pos"]])
+            print(group[self._seq_col].values[0])
 
         snp["type"] = track_syn
         # get indel table
@@ -230,8 +236,8 @@ class humanAnalysis(object):
         # use transcript id instead
         q = """
         {
-            gene(reference_genome: GRCh37, gene_symbol: "%s"){
-            variants(dataset: gnomad_r2_1) {
+            gene(reference_genome: GRCh38, gene_symbol: "%s"){
+            variants(dataset: gnomad_r3) {
             consequence
             pos
             variantId

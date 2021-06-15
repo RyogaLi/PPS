@@ -164,6 +164,8 @@ class humanAnalysis(object):
             if "N" in codon_seq:
                 track_syn.append("NA")
                 continue
+            print(codon_seq)
+            print(self._seq_col)
             pro = table[codon_seq]
             mut_codon = list(codon_seq)
             if group.shape[0] == 1:
@@ -197,6 +199,10 @@ class humanAnalysis(object):
                     #     track_syn += ["mapped_diffref"] * group["mut_pos"].shape[0]
                     # else:
                     track_syn += ["non_syn"] * group["mut_pos"].shape[0]
+            print(pro)
+            print(mut_pro)
+            print(group[["ref", "alt", "pos"]])
+            print(group[self._seq_col].values[0])
 
         snp["type"] = track_syn
         # get indel table
@@ -230,8 +236,8 @@ class humanAnalysis(object):
         # use transcript id instead
         q = """
         {
-            gene(reference_genome: GRCh37, gene_symbol: "%s"){
-            variants(dataset: gnomad_r2_1) {
+            gene(reference_genome: GRCh38, gene_symbol: "%s"){
+            variants(dataset: gnomad_r3) {
             consequence
             pos
             variantId
