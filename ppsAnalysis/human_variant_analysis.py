@@ -179,6 +179,9 @@ class humanAnalysis(object):
                     # if mut_codon[mut_pos] == codon_37[mut_pos]:
                     #     track_syn.append("mapped_diffref")
                     # else:
+                    print(codon_seq, mut_codon)
+                    print(pro, mut_pro)
+
                     track_syn.append("non_syn")
             else: # two or three variants in the same codon 
                 group["mut_pos"] = group["pos"].astype(int) % 3 - 1

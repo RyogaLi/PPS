@@ -417,10 +417,10 @@ class PlotObjHuman(object):
 
         all_mut["filled_af"] = all_mut["filled_af"].astype(float)
         all_mut["filled_af"] = all_mut["filled_af"].fillna(0.0000001)
-        print(all_mut[all_mut["filled_af"].notnull()])
+        print(all_mut.shape)
         # filter common variants
-        all_mut = all_mut[all_mut["filled_af"] < 0.001]
-
+        all_mut = all_mut[all_mut["filled_af"] == 0.0000001]
+        print(all_mut.shape)
         all_mut_genes = all_mut["gene_ID"].dropna().unique()
         plt.figure(figsize=(10, 5))
         vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)],
