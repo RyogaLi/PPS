@@ -11,6 +11,7 @@ import re
 import pandas as pd
 import requests
 import time
+pd.options.mode.chained_assignment = None
 
 class humanAnalysis(object):
 
@@ -137,7 +138,40 @@ class humanAnalysis(object):
         # for each group, assign codon
         # SNP
         snp = merge_mut[merge_mut["label"] == "SNP"]
-        grouped = snp.groupby(["gene_ID", "codon"])
+        # add a column for type
+        snp["type"] = None
+        grouped_snp = snp.groupby(["gene_ID", "codon"]).apply(self._assign_syn)
+        # get indel table
+        indel = merge_mut[merge_mut["label"] == "indel"]
+        indel["type"] = "indel"
+
+        # join two table
+        joined = pd.concat([grouped_snp, indel])
+        joined_non_syn = joined[(joined["type"] == "non_syn") | (joined["type"] == "index")]
+        print(joined.shape)
+        print(joined_non_syn.shape)
+        # get gnomad variants for genes in the table
+        merge_gnomad = []
+        gene_list = joined_non_syn.gene_ID.unique().tolist()
+        print(len(gene_list))
+        for gene in gene_list:
+            gnomAD_variants = self._get_gnomAD(gene)
+            pps_variants = joined_non_syn[joined_non_syn["gene_ID"] == gene]
+            merge_df = pd.merge(pps_variants, gnomAD_variants[["ref", "alt", "cds_pos", "exome", "genome"]], how="left", left_on=["ref", "alt", "pos"], right_on=["ref", "alt", "cds_pos"], suffixes=["_pps", "_gnomad"])
+            merge_gnomad.append(merge_df)
+            # label variants with matching gnomAD ref and if they are common
+        joined_non_syn = pd.concat(merge_gnomad)
+        syn = joined[joined["type"] == "syn"]
+        joined = pd.concat([syn, joined_non_syn])
+        print(joined.shape)
+        print(self._raw_vcf)
+        return joined
+
+
+    def _assign_syn(self, group):
+        """
+        Assign syn/non syn to each variant
+        """
         table = {
             'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
             'ACA': 'T', 'ACC': 'T', 'ACG': 'T', 'ACT': 'T',
@@ -156,43 +190,37 @@ class humanAnalysis(object):
             'TAC': 'Y', 'TAT': 'Y', 'TAA': '_', 'TAG': '_',
             'TGC': 'C', 'TGT': 'C', 'TGA': '_', 'TGG': 'W',
         }
-        # go through each codon, change the base
-        track_syn = []
-        for name, group in grouped:
-            codon_seq = group[self._seq_col].values[0][
+
+        codon_seq = group[self._seq_col].values[0][
                         int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
-            if "N" in codon_seq:
-                track_syn.append("NA")
-                continue
-            print(codon_seq)
-            print(self._seq_col)
-            pro = table[codon_seq]
-            mut_codon = list(codon_seq)
-            if group.shape[0] == 1:
-                mut_pos = int(group["pos"]) % 3 - 1
-                mut_codon[mut_pos] = group["alt"].values[0]
-                mut_pro = table["".join(mut_codon)]
-                if pro == mut_pro:
-                    track_syn.append("syn")
-                else:
+        if "N" in codon_seq:
+            group["type"] = None
+            return group
+        pro = table[codon_seq]
+        mut_codon = list(codon_seq)
+        if group.shape[0] == 1:
+            mut_pos = int(group["pos"]) % 3 - 1
+            mut_codon[mut_pos] = group["alt"].values[0]
+            mut_pro = table["".join(mut_codon)]
+            if pro == mut_pro:
+                group["type"] = "syn"
+            else:
                     # # check if this maps the grch37 reference sequence
                     # grch37_refseq = group["grch37_filled"].values[0][:-3]
                     # codon_37 = grch37_refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
                     # if mut_codon[mut_pos] == codon_37[mut_pos]:
                     #     track_syn.append("mapped_diffref")
                     # else:
-                    print(codon_seq, mut_codon)
-                    print(pro, mut_pro)
-
-                    track_syn.append("non_syn")
-            else: # two or three variants in the same codon 
-                group["mut_pos"] = group["pos"].astype(int) % 3 - 1
-                for i, r in group.iterrows():
-                    mut_codon[r["mut_pos"]] = r["alt"]
-                mut_pro = table["".join(mut_codon)]
-                if pro == mut_pro:
-                    track_syn += ["syn"] * group["mut_pos"].shape[0]
-                else:
+                    #print(group.gene_ID.values[0])
+                group["type"] = "non_syn"
+        else: # two or three variants in the same codon 
+            group["mut_pos"] = group["pos"].astype(int) % 3 - 1
+            for i, r in group.iterrows():
+                mut_codon[r["mut_pos"]] = r["alt"]
+            mut_pro = table["".join(mut_codon)]
+            if pro == mut_pro:
+                group["type"] = "syn"
+            else:
                     # get grch37 codon 
                     # check if this maps the grch37 reference sequence
                     # grch37_refseq = group["grch37_filled"].values[0][:-3]
@@ -201,32 +229,9 @@ class humanAnalysis(object):
                     # if "".join(mut_codon) == codon_37:
                     #     track_syn += ["mapped_diffref"] * group["mut_pos"].shape[0]
                     # else:
-                    track_syn += ["non_syn"] * group["mut_pos"].shape[0]
-            print(pro)
-            print(mut_pro)
-            print(group[["ref", "alt", "pos"]])
-            print(group[self._seq_col].values[0])
+                group["type"] = "non_syn"
 
-        snp["type"] = track_syn
-        # get indel table
-        indel = merge_mut[merge_mut["label"] == "indel"]
-        indel["type"] = "indel"
-
-        # join two table
-        joined = pd.concat([snp, indel])
-
-        # get gnomad variants for genes in the table
-        merge_gnomad = []
-        gene_list = joined.gene_ID.unique().tolist()
-        for gene in gene_list:
-            gnomAD_variants = self._get_gnomAD(gene)
-            pps_variants = joined[joined["gene_ID"] == gene]
-            merge_df = pd.merge(pps_variants, gnomAD_variants[["ref", "alt", "cds_pos", "exome", "genome"]], how="left", left_on=["ref", "alt", "pos"], right_on=["ref", "alt", "cds_pos"], suffixes=["_pps", "_gnomad"])
-            merge_gnomad.append(merge_df)
-            # label variants with matching gnomAD ref and if they are common
-        joined = pd.concat(merge_gnomad)
-        
-        return joined
+        return group
 
 
     def _get_gnomAD(self, gene_ID):
@@ -235,7 +240,6 @@ class humanAnalysis(object):
         :return:
         """
         gene_name = gene_ID.split("_")[-1]
-        print(gene_name)
         # use transcript id instead
         q = """
         {
@@ -259,7 +263,6 @@ class humanAnalysis(object):
             }
 
         }""" % gene_name
-
         # send request
         r = requests.post("https://gnomad.broadinstitute.org/api", json={'query': q})
         while r.status_code != 200:
