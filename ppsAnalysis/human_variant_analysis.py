@@ -164,7 +164,7 @@ class humanAnalysis(object):
         syn = joined[joined["type"] == "syn"]
         joined = pd.concat([syn, joined_non_syn])
         print(joined.shape)
-        print(self._raw_vcf)
+        print(self._rawvcf)
         return joined
 
 
