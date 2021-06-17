@@ -108,6 +108,8 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         # get only the subset that are in the group 
         group_ID = fastq_ID.split("_")[-1][-1]
         orfs_df = orfs[orfs["Pool group #"] == int(group_ID)]
+        # drop duplicated ORFs based on gene_name
+        orfs_df = orfs_df.drop_duplicates(subset="orf_name")
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
@@ -193,7 +195,7 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
     analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df, ref)
     summary = analysis.get_full_cover()
     # all the genes with full coverage
-    n_fully_aligned = summary[summary["fully_aligned"] == "y"].shape[0]
+    n_fully_aligned = summary[summary["fully_covered"] == "y"].shape[0]
     # all genes in ref fasta
     n_ref = summary.shape[0]
     # all genes found in this fastq file
@@ -201,25 +203,22 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
 
     # merge with target orfs
     merged_df = pd.merge(orfs_df, summary, how="left", left_on="orf_name", right_on="gene_ID")
-    merged_df = merged_df[~merged_df["gene_ID"].isnull()]
-    print(merged_df)
-    print(summary)
-    print(orfs_df)
-    exit()
+    #merged_df = merged_df[~merged_df["gene_ID"].isnull()]
     # merge with target orfs
     # merged_df_full = pd.merge(orfs_df, fully_covered, how="left", left_on="orf_name", right_on="gene_ID")
     # merged_df_full = merged_df_full[~merged_df_full["gene_ID"].isnull()]
     n_targeted = orfs_df.shape[0]
-    n_targeted_full = merged_df_full.shape[0]
+    n_targeted_full = merged_df[merged_df["fully_covered"] == "y"].shape[0]
 
     mut_df = analysis.filter_vcf()
-
+    print(mut_df)
     # merge mut_df with fully covered
-    merge_mut = pd.merge(mut_df, fully_covered, how="left", on="gene_ID")
-    merge_mut_fully_covered = merge_mut[~merge_mut["gene_len"].isnull()]
+    merge_mut = pd.merge(mut_df, merged_df, how="left", on="gene_ID")
+    merge_mut_fully_covered = merge_mut[merge_mut["fully_covered"] == "y"]
     mut_file = os.path.join(suboutput, "all_mut.csv")
     if not os.path.isfile(mut_file) or os.stat("file").st_size == 0:
         processed_mut = analysis._process_mut(mut_df)
+        exit()
         processed_mut.to_csv(mut_file)
     else:
         processed_mut = pd.read_csv(mut_file)
