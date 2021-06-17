@@ -136,6 +136,7 @@ class yeastAnalysis(object):
         snp = merge_mut[merge_mut["label"] == "SNP"]
         # add a column for type
         snp["type"] = None
+        print(snp.columns)
         grouped_snp = snp.groupby(["gene_ID", "codon"]).apply(self._assign_syn)
         # get indel table
         indel = merge_mut[merge_mut["label"] == "indel"]
@@ -169,7 +170,7 @@ class yeastAnalysis(object):
             'TGC': 'C', 'TGT': 'C', 'TGA': '_', 'TGG': 'W',
         }
 
-        codon_seq = group[self._seq_col].values[0][
+        codon_seq = group["cds_seq"].values[0][
                         int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
         if "N" in codon_seq:
             group["type"] = None

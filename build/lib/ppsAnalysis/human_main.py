@@ -113,7 +113,8 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
-            all_found, fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, "grch38")
+            all_found, fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, sub_output,
+                                                                         "grch37")
             fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
             fully_covered.to_csv(fully_covered_file, index=False)
             all_found_file = os.path.join(sub_output, "all_found_groupSpecORFs.csv")
@@ -187,13 +188,12 @@ def read_human_ref(human_ref):
     return merged_df
 
 
-def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, ref):
+def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
     """
 
     """
     analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df, ref)
     full_cover_genes, gene_dict, ref_dict = analysis.get_full_cover()
-    print(raw_vcf_file)
     # all the genes with full coverage
     n_fully_aligned = len(full_cover_genes.keys())
     # all genes in ref fasta
@@ -227,7 +227,12 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, ref):
     # merge mut_df with fully covered
     merge_mut = pd.merge(mut_df, fully_covered, how="left", on="gene_ID")
     merge_mut_fully_covered = merge_mut[~merge_mut["gene_len"].isnull()]
-    processed_mut = analysis._process_mut(mut_df)
+    mut_file = os.path.join(suboutput, "all_mut.csv")
+    if not os.path.isfile(mut_file) or os.stat("file").st_size == 0:
+        processed_mut = analysis._process_mut(mut_df)
+        processed_mut.to_csv(mut_file)
+    else:
+        processed_mut = pd.read_csv(mut_file)
     # from fully aligned genes, select those with any mutations
     fully_aligned_with_mut = pd.merge(fully_covered, processed_mut, how="left", left_on="gene_ID",
                                       right_on="gene_ID")

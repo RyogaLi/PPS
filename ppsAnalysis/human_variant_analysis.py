@@ -147,7 +147,7 @@ class humanAnalysis(object):
 
         # join two table
         joined = pd.concat([grouped_snp, indel])
-        joined_non_syn = joined[(joined["type"] == "non_syn") | (joined["type"] == "index")]
+        joined_non_syn = joined[(joined["type"] == "non_syn") | (joined["type"] == "indel")]
         print(joined.shape)
         print(joined_non_syn.shape)
         # get gnomad variants for genes in the table
@@ -283,6 +283,8 @@ class humanAnalysis(object):
         coding_variants = df[df.hgvsp.notnull()]
         # extract cds position using regex
         coding_variants["cds_pos"] = coding_variants['hgvsc'].str.extract('(\d+)', expand=True)
+        # save coding variants for future use
+
         return coding_variants
 
 

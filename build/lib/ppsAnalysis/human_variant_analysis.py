@@ -137,7 +137,6 @@ class humanAnalysis(object):
         # first group by ORF name
         # for each group, assign codon
         # SNP
-        print(merge_mut.columns)
         snp = merge_mut[merge_mut["label"] == "SNP"]
         # add a column for type
         snp["type"] = None
@@ -148,7 +147,7 @@ class humanAnalysis(object):
 
         # join two table
         joined = pd.concat([grouped_snp, indel])
-        joined_non_syn = joined[(joined["type"] == "non_syn") | (joined["type"] == "index")]
+        joined_non_syn = joined[(joined["type"] == "non_syn") | (joined["type"] == "indel")]
         print(joined.shape)
         print(joined_non_syn.shape)
         # get gnomad variants for genes in the table
@@ -165,7 +164,7 @@ class humanAnalysis(object):
         syn = joined[joined["type"] == "syn"]
         joined = pd.concat([syn, joined_non_syn])
         print(joined.shape)
-        print(self._raw_vcf)
+        print(self._rawvcf)
         return joined
 
 
@@ -284,6 +283,8 @@ class humanAnalysis(object):
         coding_variants = df[df.hgvsp.notnull()]
         # extract cds position using regex
         coding_variants["cds_pos"] = coding_variants['hgvsc'].str.extract('(\d+)', expand=True)
+        # save coding variants for future use
+
         return coding_variants
 
 

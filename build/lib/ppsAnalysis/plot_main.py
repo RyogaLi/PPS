@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
-from matplotlib_venn import venn2, venn2_circles, venn2_unweighted, venn3, venn3_circles
+from matplotlib_venn import venn2, venn2_circles, venn2_unweighted, venn3, venn3_circles, _venn3
 pd.options.mode.chained_assignment = None  # default='warn'
 
 class PlotObjYeast(object):
@@ -376,11 +376,17 @@ class PlotObjHuman(object):
         all_full_summary = os.path.join(self._dir, "all_full_summary.csv")
         all_found_summary = os.path.join(self._dir, "all_found_summary.csv")
         # compare genes in all the targeted space (ORFs) vs all fully aligned
-        all_targeted_unique_db = human_ORFs["orf_name"].dropna().unique()
+        all_targeted_unique_db = human_ORFs[human_ORFs["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
         all_fully_aligned = pd.read_csv(all_full_summary)
         all_found = pd.read_csv(all_found_summary)
-        all_found_genes = all_found["orf_name"].dropna().unique()
-        all_fully_aligned_genes = all_fully_aligned["orf_name"].dropna().unique()
+        all_found_genes = all_found[all_found["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
+        all_fully_aligned_genes = all_fully_aligned[all_fully_aligned["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
+        # print(all_fully_aligned)
+        print(len(all_found_genes))
+        print(len(all_fully_aligned_genes))
+        print(len(all_targeted_unique_db))
+        # print(set(all_found_genes) ^ set(all_targeted_unique_db))
+        print(len(set.intersection(set(all_found_genes), set(all_targeted_unique_db))))
         plt.figure(figsize=(8, 5))
         vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_fully_aligned_genes)],
                    set_labels=(f"all ORFs: {len(all_targeted_unique_db)}", f"all found: {len(all_found_genes)}",
@@ -395,7 +401,7 @@ class PlotObjHuman(object):
         plt.savefig(os.path.join(self._dir, "./allORFs_venn.png"))
         plt.close()
 
-        all_found_genes = all_fully_aligned["orf_name"].dropna().unique()
+        # all_found_genes = all_fully_aligned["orf_name"].dropna().unique()
         venn2([set(all_targeted_unique_db), set(all_found_genes)], set_labels=("all ORFs", "all_fully_aligned"))
         plt.savefig(os.path.join(self._dir, "./allORFs_fullaligned_venn.png"))
         plt.close()
@@ -403,36 +409,36 @@ class PlotObjHuman(object):
         all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
 
 
-        all_mut = pd.read_csv(all_mut_summary)
-        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA") & (all_mut["type"] != "mapped_diffref")]
+        # all_mut = pd.read_csv(all_mut_summary)
+        # all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA") & (all_mut["type"] != "mapped_diffref")]
         # also filter out gnomad common variants
         # all_mut.exome = all_mut.exome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut.genome = all_mut.genome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut["exome_af"] = pd.DataFrame(all_mut.exome.values.tolist())
-        all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
-        all_mut["genome_af"] =  all_mut["genome"].str.extract(r'(\d+.\d+e?-?\d+)')
-        print(all_mut[all_mut["exome"].notnull()][["exome", "exome_af"]])
-        # print(all_mut[all_mut["af"].notnull()]["af"])
-        all_mut["filled_af"] = all_mut["genome_af"].fillna(all_mut["exome_af"])
-
-        all_mut["filled_af"] = all_mut["filled_af"].astype(float)
-        all_mut["filled_af"] = all_mut["filled_af"].fillna(0.0000001)
-        print(all_mut.shape)
-        # filter common variants
-        all_mut = all_mut[all_mut["filled_af"] == 0.0000001]
-        print(all_mut.shape)
-        all_mut_genes = all_mut["gene_ID"].dropna().unique()
-        plt.figure(figsize=(10, 5))
-        vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)],
-                   set_labels=(f"all ORFs: {len(all_targeted_unique_db)}", f"fully covered: {len(all_found_genes)}",
-                               f"fully covered; \nwith non-syn mut; \nfiltered variants based on latest ENSEMBL "
-                               f"refseq; \nremoved gnomAD common variants:\n"
-                               f" {len(all_mut_genes)}"))
-        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], linestyle='dashed',
-                      linewidth=1, color="black")
-        plt.tight_layout()
-        plt.savefig(os.path.join(self._dir, "./allORFs_venn3.png"))
-        plt.close()
+        # all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        # all_mut["genome_af"] =  all_mut["genome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        # print(all_mut[all_mut["exome"].notnull()][["exome", "exome_af"]])
+        # # print(all_mut[all_mut["af"].notnull()]["af"])
+        # all_mut["filled_af"] = all_mut["genome_af"].fillna(all_mut["exome_af"])
+        #
+        # all_mut["filled_af"] = all_mut["filled_af"].astype(float)
+        # all_mut["filled_af"] = all_mut["filled_af"].fillna(0.0000001)
+        # print(all_mut.shape)
+        # # filter common variants
+        # all_mut = all_mut[all_mut["filled_af"] == 0.0000001]
+        # print(all_mut.shape)
+        # all_mut_genes = all_mut["gene_ID"].dropna().unique()
+        # plt.figure(figsize=(10, 5))
+        # vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)],
+        #            set_labels=(f"all ORFs: {len(all_targeted_unique_db)}", f"fully covered: {len(all_found_genes)}",
+        #                        f"fully covered; \nwith non-syn mut; \nfiltered variants based on latest ENSEMBL "
+        #                        f"refseq; \nremoved gnomAD common variants:\n"
+        #                        f" {len(all_mut_genes)}"))
+        # venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], linestyle='dashed',
+        #               linewidth=1, color="black")
+        # plt.tight_layout()
+        # plt.savefig(os.path.join(self._dir, "./allORFs_venn3.png"))
+        # plt.close()
 
         all_mut = pd.read_csv(all_mut_summary)
         all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
@@ -440,25 +446,27 @@ class PlotObjHuman(object):
         # all_mut.exome = all_mut.exome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut.genome = all_mut.genome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut["exome_af"] = pd.DataFrame(all_mut.exome.values.tolist())
-        all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        # all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        all_mut["exome_af"] = all_mut["exome"]
         all_mut["genome_af"] =  all_mut["genome"].str.extract(r'(\d+.\d+e?-?\d+)')
-        print(all_mut[all_mut["exome"].notnull()][["exome", "exome_af"]])
+        # print(all_mut[all_mut["exome"].notnull()][["exome", "exome_af"]])
         # print(all_mut[all_mut["af"].notnull()]["af"])
         all_mut["filled_af"] = all_mut["genome_af"].fillna(all_mut["exome_af"])
 
         all_mut["filled_af"] = all_mut["filled_af"].astype(float)
         all_mut["filled_af"] = all_mut["filled_af"].fillna(0.0000001)
-        print(all_mut[all_mut["filled_af"].notnull()])
+        # print(all_mut[all_mut["filled_af"].notnull()])
         # filter common variants
-        all_mut = all_mut[all_mut["filled_af"] < 0.001]
+        all_mut = all_mut[all_mut["filled_af"] < 0.0001]
 
-        all_mut_genes = all_mut["gene_ID"].dropna().unique()
+        all_mut_genes = all_mut[all_mut["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
         plt.figure(figsize=(10, 5))
-        vd = venn3([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)],
-                   set_labels=(f"all ORFs: {len(all_targeted_unique_db)}", f"fully covered: {len(all_found_genes)}",
+
+        vd = venn3([set(all_targeted_unique_db), set(all_fully_aligned_genes), set(all_mut_genes)],
+                   set_labels=(f"all ORFs: {len(all_targeted_unique_db)}", f"fully covered: {len(all_fully_aligned_genes)}",
                                f"fully covered; \nwith non-syn mut; \nremoved gnomAD common variants:\n"
                                f" {len(all_mut_genes)}"))
-        venn3_circles([set(all_targeted_unique_db), set(all_found_genes), set(all_mut_genes)], linestyle='dashed',
+        venn3_circles([set(all_targeted_unique_db), set(all_fully_aligned_genes), set(all_mut_genes)], linestyle='dashed',
                       linewidth=1, color="black")
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "./allORFs_venn3_onlygnomad.png"))
