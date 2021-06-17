@@ -134,57 +134,79 @@ class yeastAnalysis(object):
         # for each group, assign codon
         # SNP
         snp = merge_mut[merge_mut["label"] == "SNP"]
-        grouped = snp.groupby(["gene_ID", "codon"])
-        table = {
-        'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
-        'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
-        'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K',
-        'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R',
-        'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L',
-        'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P',
-        'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q',
-        'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R',
-        'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V',
-        'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A',
-        'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E',
-        'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G',
-        'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S',
-        'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L',
-        'TAC':'Y', 'TAT':'Y', 'TAA':'_', 'TAG':'_',
-        'TGC':'C', 'TGT':'C', 'TGA':'_', 'TGG':'W',
-            }
-        # go through each codon, change the base
-        track_syn = []
-        for name, group in grouped:
-            codon_seq = group["cds_seq"].values[0][int(group["codon"].values[0]-1)*3:int(group["codon"].values[0])*3]
-            if "N" in codon_seq:
-                track_syn.append("NA")
-                continue
-            pro = table[codon_seq]
-            mut_codon = list(codon_seq)
-            if group.shape[0] == 1:
-                mut_pos = int(group["pos"])%3 -1
-                mut_codon[mut_pos] = group["alt"].values[0]
-                mut_pro = table["".join(mut_codon)]
-                if pro == mut_pro:
-                    track_syn.append("syn")
-                else:
-                    track_syn.append("non_syn")
-            else:
-                group["mut_pos"] = group["pos"].astype(int)%3 -1
-                for i, r in group.iterrows():
-                    mut_codon[r["mut_pos"]] = r["alt"]
-                mut_pro = table["".join(mut_codon)]
-                if pro == mut_pro:
-                    track_syn += ["syn"]*group["mut_pos"].shape[0]
-                else:
-                    track_syn += ["non_syn"]*group["mut_pos"].shape[0]
-        snp["type"] = track_syn
+        # add a column for type
+        snp["type"] = None
+        grouped_snp = snp.groupby(["gene_ID", "codon"]).apply(self._assign_syn)
         # get indel table
         indel = merge_mut[merge_mut["label"] == "indel"]
         indel["type"] = "indel"
 
-        # join two table 
-        joined = pd.concat([snp, indel])
+        # join two table
+        joined = pd.concat([grouped_snp, indel])
         
         return joined
+
+    def _assign_syn(self, group):
+        """
+        Assign syn/non syn to each variant
+        """
+        table = {
+            'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
+            'ACA': 'T', 'ACC': 'T', 'ACG': 'T', 'ACT': 'T',
+            'AAC': 'N', 'AAT': 'N', 'AAA': 'K', 'AAG': 'K',
+            'AGC': 'S', 'AGT': 'S', 'AGA': 'R', 'AGG': 'R',
+            'CTA': 'L', 'CTC': 'L', 'CTG': 'L', 'CTT': 'L',
+            'CCA': 'P', 'CCC': 'P', 'CCG': 'P', 'CCT': 'P',
+            'CAC': 'H', 'CAT': 'H', 'CAA': 'Q', 'CAG': 'Q',
+            'CGA': 'R', 'CGC': 'R', 'CGG': 'R', 'CGT': 'R',
+            'GTA': 'V', 'GTC': 'V', 'GTG': 'V', 'GTT': 'V',
+            'GCA': 'A', 'GCC': 'A', 'GCG': 'A', 'GCT': 'A',
+            'GAC': 'D', 'GAT': 'D', 'GAA': 'E', 'GAG': 'E',
+            'GGA': 'G', 'GGC': 'G', 'GGG': 'G', 'GGT': 'G',
+            'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S',
+            'TTC': 'F', 'TTT': 'F', 'TTA': 'L', 'TTG': 'L',
+            'TAC': 'Y', 'TAT': 'Y', 'TAA': '_', 'TAG': '_',
+            'TGC': 'C', 'TGT': 'C', 'TGA': '_', 'TGG': 'W',
+        }
+
+        codon_seq = group[self._seq_col].values[0][
+                        int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
+        if "N" in codon_seq:
+            group["type"] = None
+            return group
+        pro = table[codon_seq]
+        mut_codon = list(codon_seq)
+        if group.shape[0] == 1:
+            mut_pos = int(group["pos"]) % 3 - 1
+            mut_codon[mut_pos] = group["alt"].values[0]
+            mut_pro = table["".join(mut_codon)]
+            if pro == mut_pro:
+                group["type"] = "syn"
+            else:
+                    # # check if this maps the grch37 reference sequence
+                    # grch37_refseq = group["grch37_filled"].values[0][:-3]
+                    # codon_37 = grch37_refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
+                    # if mut_codon[mut_pos] == codon_37[mut_pos]:
+                    #     track_syn.append("mapped_diffref")
+                    # else:
+                    #print(group.gene_ID.values[0])
+                group["type"] = "non_syn"
+        else: # two or three variants in the same codon
+            group["mut_pos"] = group["pos"].astype(int) % 3 - 1
+            for i, r in group.iterrows():
+                mut_codon[r["mut_pos"]] = r["alt"]
+            mut_pro = table["".join(mut_codon)]
+            if pro == mut_pro:
+                group["type"] = "syn"
+            else:
+                    # get grch37 codon
+                    # check if this maps the grch37 reference sequence
+                    # grch37_refseq = group["grch37_filled"].values[0][:-3]
+                    # codon_37 = grch37_refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
+                    #
+                    # if "".join(mut_codon) == codon_37:
+                    #     track_syn += ["mapped_diffref"] * group["mut_pos"].shape[0]
+                    # else:
+                group["type"] = "non_syn"
+
+        return group
