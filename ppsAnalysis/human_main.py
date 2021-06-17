@@ -75,8 +75,8 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
-    all_genes_summary = pd.DataFrame([],
-                                     columns=["orf_id", 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol', 'Mapped reads', 'Verified', '# mut', 'orf_name', 'gene_ID', 'gene_len'])
+    all_genes_summary = pd.DataFrame([], columns=["orf_id", 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol',
+                                                  'Mapped reads', 'Verified', '# mut', 'orf_name', 'gene_ID', 'gene_len'])
     all_found_summary = os.path.join(output, "all_found_summary.csv")
     all_genes_summary.to_csv(all_found_summary, index=False)
 
@@ -90,7 +90,6 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         sub_output = os.path.join(os.path.abspath(output), fastq_ID)
 
         # there should be only one log file in the dir
-        print(sub_output)
         log_file = glob.glob(f"{sub_output}/*.log")[0]
         if not os.path.isfile(log_file):
             logger.warning(f"log file does not exist: {log_file}")
@@ -105,7 +104,6 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
         all_log["fastq_ID"] += [fastq_ID]
-        print(all_log)
         # for each vcf file, get how many genes are fully aligned
         # get only the subset that are in the group 
         group_ID = fastq_ID.split("_")[-1][-1]
@@ -193,36 +191,28 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
 
     """
     analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df, ref)
-    full_cover_genes, gene_dict, ref_dict = analysis.get_full_cover()
+    summary = analysis.get_full_cover()
     # all the genes with full coverage
-    n_fully_aligned = len(full_cover_genes.keys())
+    n_fully_aligned = summary[summary["fully_aligned"] == "y"].shape[0]
     # all genes in ref fasta
-    n_ref = len(ref_dict.keys())
+    n_ref = summary.shape[0]
     # all genes found in this fastq file
-    n_all_found = len(gene_dict.keys())
-
-    # save all the genes that are fully covered to the output folder
-    fully_covered = pd.DataFrame.from_dict(full_cover_genes, orient='index').reset_index()
-    fully_covered.columns = ["gene_ID", "gene_len"]
-
-    # save all the genes that are found to output
-    # save all the genes that are fully covered to the output folder
-    all_found = pd.DataFrame.from_dict(gene_dict, orient='index').reset_index()
-    all_found.columns = ["gene_ID", "gene_len"]
+    n_all_found = summary[summary["found"] == "y"].shape[0]
 
     # merge with target orfs
-    merged_df = pd.merge(orfs_df, all_found, how="left", left_on="orf_name", right_on="gene_ID")
+    merged_df = pd.merge(orfs_df, summary, how="left", left_on="orf_name", right_on="gene_ID")
     merged_df = merged_df[~merged_df["gene_ID"].isnull()]
-
+    print(merged_df)
+    print(summary)
+    print(orfs_df)
+    exit()
     # merge with target orfs
-    merged_df_full = pd.merge(orfs_df, fully_covered, how="left", left_on="orf_name", right_on="gene_ID")
-    merged_df_full = merged_df_full[~merged_df_full["gene_ID"].isnull()]
+    # merged_df_full = pd.merge(orfs_df, fully_covered, how="left", left_on="orf_name", right_on="gene_ID")
+    # merged_df_full = merged_df_full[~merged_df_full["gene_ID"].isnull()]
     n_targeted = orfs_df.shape[0]
     n_targeted_full = merged_df_full.shape[0]
 
     mut_df = analysis.filter_vcf()
-    mut_df = pd.DataFrame(mut_df)
-    mut_df.columns = ["gene_ID", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label"]
 
     # merge mut_df with fully covered
     merge_mut = pd.merge(mut_df, fully_covered, how="left", on="gene_ID")
