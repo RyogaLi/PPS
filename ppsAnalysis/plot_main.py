@@ -373,14 +373,16 @@ class PlotObjHuman(object):
         """
         human_91 = "/Users/roujia/Documents/02_dev/04_HuRI/human ORF/20161117_ORFeome91_seqs.csv"
         human_ORFs = read_human_csv(human_91)
-        all_full_summary = os.path.join(self._dir, "all_full_summary.csv")
-        all_found_summary = os.path.join(self._dir, "all_found_summary.csv")
+        all_summary_file = os.path.join(self._dir, "all_summary.csv")
+        all_summary = pd.read_csv(all_summary_file)
+        # all_found_summary = os.path.join(self._dir, "all_found_summary.csv")
         # compare genes in all the targeted space (ORFs) vs all fully aligned
         all_targeted_unique_db = human_ORFs[human_ORFs["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
-        all_fully_aligned = pd.read_csv(all_full_summary)
-        all_found = pd.read_csv(all_found_summary)
-        all_found_genes = all_found[all_found["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
-        all_fully_aligned_genes = all_fully_aligned[all_fully_aligned["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
+
+        all_found_genes = all_summary[(all_summary["found"] == 'y') & (all_summary["entrez_gene_symbol"] != '-1')]["entrez_gene_symbol"].dropna().unique()
+        all_fully_aligned_genes = all_summary[(all_summary["fully_covered"] == 'y') & (all_summary["entrez_gene_symbol"] != '-1')]["entrez_gene_symbol"].dropna(
+
+        ).unique()
         # print(all_fully_aligned)
         print(len(all_found_genes))
         print(len(all_fully_aligned_genes))
@@ -446,8 +448,8 @@ class PlotObjHuman(object):
         # all_mut.exome = all_mut.exome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut.genome = all_mut.genome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut["exome_af"] = pd.DataFrame(all_mut.exome.values.tolist())
-        # all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
-        all_mut["exome_af"] = all_mut["exome"]
+        all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        # all_mut["exome_af"] = all_mut["exome"]
         all_mut["genome_af"] =  all_mut["genome"].str.extract(r'(\d+.\d+e?-?\d+)')
         # print(all_mut[all_mut["exome"].notnull()][["exome", "exome_af"]])
         # print(all_mut[all_mut["af"].notnull()]["af"])
@@ -457,7 +459,7 @@ class PlotObjHuman(object):
         all_mut["filled_af"] = all_mut["filled_af"].fillna(0.0000001)
         # print(all_mut[all_mut["filled_af"].notnull()])
         # filter common variants
-        all_mut = all_mut[all_mut["filled_af"] < 0.0001]
+        all_mut = all_mut[all_mut["filled_af"] < 0.001]
 
         all_mut_genes = all_mut[all_mut["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
         plt.figure(figsize=(10, 5))

@@ -224,7 +224,10 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
         processed_mut = pd.read_csv(mut_file)
         processed_mut = processed_mut.drop(processed_mut.columns[0], axis=1)
     # from fully aligned genes, select those with any mutations
-    fully_aligned_with_mut = pd.merge(merged_df[["gene_ID", "entrez_gene_symbol"]], processed_mut, how="left", left_on="gene_ID",
+    fully_aligned_with_mut = pd.merge(merged_df[["gene_ID", "entrez_gene_symbol", "found", "fully_covered"]],
+                                      processed_mut,
+                                      how="left",
+                                      left_on="gene_ID",
                                       right_on="gene_ID")
     mut_count_df = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
     n_mut_genes_full = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
