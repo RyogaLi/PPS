@@ -75,14 +75,8 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
-    all_genes_summary = pd.DataFrame([], columns=["orf_id", 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol',
-                                                  'Mapped reads', 'Verified', '# mut', 'orf_name', 'gene_ID', 'gene_len'])
-    all_found_summary = os.path.join(output, "all_found_summary.csv")
-    all_genes_summary.to_csv(all_found_summary, index=False)
-
-    all_full_summary = os.path.join(output, "all_full_summary.csv")
-    all_genes_summary.to_csv(all_full_summary, index=False)
-
+    all_summary_file = os.path.join(output, "all_summary.csv")
+    all_summary = []
     all_mut_df = []
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
@@ -113,20 +107,28 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
-            all_found, fully_covered, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, sub_output,
-                                                                         "grch37")
-            fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
-            fully_covered.to_csv(fully_covered_file, index=False)
-            all_found_file = os.path.join(sub_output, "all_found_groupSpecORFs.csv")
-            all_found.to_csv(all_found_file, index=False)
+            all_summary_df, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, sub_output, "grch37")
+            #fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
+            #fully_covered.to_csv(fully_covered_file, index=False)
+            all_group_summary_file = os.path.join(sub_output, "all_summary_groupSpecORFs.csv")
+            all_summary_df.to_csv(all_group_summary_file, index=False)
 
-            fully_covered.to_csv(all_full_summary, index=False, header=False, mode="a")
-            all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
-
+            #fully_covered.to_csv(all_full_summary, index=False, header=False, mode="a")
+            #all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
+            
             stats_list.append("groupSpecORFs")
             genes_found.append(stats_list)
             mut_df["sample"] = fastq_ID
+            all_summary_df["sample"] = fastq_ID
             all_mut_df.append(mut_df)
+            all_summary.append(all_summary_df)
+    
+    # process all summary
+    all_summary_df = pd.concat(all_summary)
+    all_summary_df.to_csv(all_summary_file, index=False)
+    print(all_summary_df)
+    print(all_summary_df.columns)
+ 
     print(all_log)
     # process all log
     all_log = pd.DataFrame(all_log)
@@ -211,19 +213,18 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
     n_targeted_full = merged_df[merged_df["fully_covered"] == "y"].shape[0]
 
     mut_df = analysis.filter_vcf()
-    print(mut_df)
     # merge mut_df with fully covered
     merge_mut = pd.merge(mut_df, merged_df, how="left", on="gene_ID")
     merge_mut_fully_covered = merge_mut[merge_mut["fully_covered"] == "y"]
     mut_file = os.path.join(suboutput, "all_mut.csv")
-    if not os.path.isfile(mut_file) or os.stat("file").st_size == 0:
+    if not os.path.isfile(mut_file) or os.stat(mut_file).st_size == 0:
         processed_mut = analysis._process_mut(mut_df)
-        exit()
         processed_mut.to_csv(mut_file)
     else:
         processed_mut = pd.read_csv(mut_file)
+        processed_mut = processed_mut.drop(processed_mut.columns[0], axis=1)
     # from fully aligned genes, select those with any mutations
-    fully_aligned_with_mut = pd.merge(fully_covered, processed_mut, how="left", left_on="gene_ID",
+    fully_aligned_with_mut = pd.merge(merged_df[["gene_ID", "entrez_gene_symbol"]], processed_mut, how="left", left_on="gene_ID",
                                       right_on="gene_ID")
     mut_count_df = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
     n_mut_genes_full = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
@@ -233,7 +234,7 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
 
     # from fully aligned genes, select those with any mutations
     stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_orf_with_v, n_ref]
-    return merged_df, merged_df_full, stats_list, mut_count_df
+    return merged_df, stats_list, mut_count_df
 
 
 def check_args(arguments):

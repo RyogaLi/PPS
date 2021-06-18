@@ -172,8 +172,7 @@ class humanAnalysis(object):
 
         # join two table
         joined = pd.concat([grouped_snp, indel])
-        joined_non_syn = joined[(joined["type"] == "non_syn") | (joined["type"] == "indel")]
-        exit()
+        joined_non_syn = joined[(joined["type"] == "non_syn") | (joined["type"] == "indel") | (joined["type"] == "non_syn_ref")]
         # get gnomad variants for genes in the table
         merge_gnomad = []
         gene_list = joined_non_syn.gene_ID.unique().tolist()
@@ -186,7 +185,6 @@ class humanAnalysis(object):
         joined_non_syn = pd.concat(merge_gnomad)
         syn = joined[joined["type"] == "syn"]
         joined = pd.concat([syn, joined_non_syn])
-        print(joined) 
         return joined
 
     def _assign_syn(self, group):
@@ -226,9 +224,11 @@ class humanAnalysis(object):
                 group["type"] = "syn"
             else:
                     # # check if this maps the hORFEOME reference sequence
-                refseq = group["cds_seq"].values[0][:-3]
+                refseq = group["cds_seq"].values[0]
                 codon_ref = refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
-                if mut_codon[mut_pos] == codon_ref[mut_pos]:
+                if codon_ref == "":
+                    group["type"] = "non_syn"
+                elif mut_codon[mut_pos] == codon_ref[mut_pos]:
                     group["type"] = "non_syn_ref"
                     #     track_syn.append("mapped_diffref")
                     # else:
@@ -245,10 +245,12 @@ class humanAnalysis(object):
             else:
                     # get grch37 codon 
                     # check if this maps the grch37 reference sequence
-                refseq = group["cds_seq"].values[0][:-3]
+                refseq = group["cds_seq"].values[0]
                 codon_ref = refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
-                    #
-                if "".join(mut_codon) == codon_ref:
+                if codon_ref == "":
+                    group["type"] = "non_syn"
+ 
+                elif "".join(mut_codon) == codon_ref:
                     group["type"] = "non_syn_ref"
                     #     track_syn += ["mapped_diffref"] * group["mut_pos"].shape[0]
                 else:
@@ -261,7 +263,6 @@ class humanAnalysis(object):
         :return:
         """
         gene_name = gene_ID.split("_")[-1]
-        print(gene_name)
         # use transcript id instead
         q = """
         {
