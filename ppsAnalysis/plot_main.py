@@ -384,9 +384,9 @@ class PlotObjHuman(object):
 
         ).unique()
         # print(all_fully_aligned)
-        print(len(all_found_genes))
-        print(len(all_fully_aligned_genes))
-        print(len(all_targeted_unique_db))
+        # print(len(all_found_genes))
+        # print(len(all_fully_aligned_genes))
+        # print(len(all_targeted_unique_db))
         # print(set(all_found_genes) ^ set(all_targeted_unique_db))
         print(len(set.intersection(set(all_found_genes), set(all_targeted_unique_db))))
         plt.figure(figsize=(8, 5))
@@ -443,7 +443,7 @@ class PlotObjHuman(object):
         # plt.close()
 
         all_mut = pd.read_csv(all_mut_summary)
-        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
+        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA") & (all_mut["fully_covered"] == "y")]
         # also filter out gnomad common variants
         # all_mut.exome = all_mut.exome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut.genome = all_mut.genome.fillna("{'af': 0.000000001}").astype(str)
@@ -472,6 +472,21 @@ class PlotObjHuman(object):
                       linewidth=1, color="black")
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "./allORFs_venn3_onlygnomad.png"))
+        plt.close()
+
+        # genes with non_syn_ref
+        all_mut_nonsyn_ref = all_mut[(all_mut["type"] == "non_syn_ref") & (all_mut["entrez_gene_symbol"] != '-1')][
+            "entrez_gene_symbol"].dropna().unique()
+        vd = venn3([set(all_targeted_unique_db), set(all_mut_nonsyn_ref), set(all_mut_genes)],
+                   set_labels=(
+                   f"all ORFs: {len(all_targeted_unique_db)}", f"{len(all_mut_nonsyn_ref)}",
+                   f"fully covered; \nwith non-syn mut; \nremoved gnomAD common variants:\n"
+                   f" {len(all_mut_genes)}"))
+        venn3_circles([set(all_targeted_unique_db), set(all_mut_nonsyn_ref), set(all_mut_genes)],
+                      linestyle='dashed',
+                      linewidth=1, color="black")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "./allORFs_venn3_variants.png"))
         plt.close()
 
 
