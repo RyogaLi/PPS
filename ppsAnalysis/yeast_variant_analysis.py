@@ -63,7 +63,28 @@ class yeastAnalysis(object):
                 # else:
                 #     avg_rd = remove_genes[key][1] / remove_genes[key][0]
                 #     remove_genes[key].append(avg_rd)
-        return removed_genes, gene_dict, ref_dict
+        # save all the genes that are fully covered to the output folder
+        fully_covered = pd.DataFrame.from_dict(removed_genes, orient='index').reset_index()
+        fully_covered.columns = ["gene_ID", "gene_len"]
+        fully_covered["fully_covered"] = "y"
+
+        # save all the genes that are found to output
+        # save all the genes that are fully covered to the output folder
+        all_found = pd.DataFrame.from_dict(gene_dict, orient='index').reset_index()
+        all_found.columns = ["gene_ID", "gene_len"]
+        all_found["found"] = "y"
+
+        # save all the genes that are found to output
+        # save all the genes that are fully covered to the output folder
+        all_ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
+        all_ref.columns = ["gene_ID", "gene_len"]
+
+        # join three dfs into one
+        # with column names = ["gene_ID", "gene_len", "fully covered", "found"]
+        # merge all found to all_ref
+        summary = pd.merge(all_ref, all_found[["gene_ID", "found"]], how="left", on="gene_ID")
+        summary = pd.merge(summary, fully_covered[["gene_ID", "fully_covered"]], how="left", on="gene_ID")
+        return summary
 
     def filter_vcf(self):
         """
@@ -115,7 +136,10 @@ class yeastAnalysis(object):
                     # track how many variants for each gene (with more than 10 reads mapped to it)
                     mut_count.append([l[0], l[1], l[3], mut_base, l[5], mut_counts, info_dict["DP"], label])
                     filteredvcf.write(line)
-        return mut_count
+        mut_df = pd.DataFrame(mut_count)
+        mut_df.columns = ["gene_ID", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label"]
+
+        return mut_df
     
     def process_mut(self, all_df, mut_df):
         """
