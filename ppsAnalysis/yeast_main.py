@@ -20,14 +20,20 @@ import matplotlib.pyplot as plt
 from matplotlib_venn import venn2, venn2_circles, venn2_unweighted
 
 
+# set global variables
+# file paths (GALEN)
+all_seq = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/all_sequence.csv"
+HIP_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/HIP_targeted_ORFs.csv"
+other_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/other_targeted_ORFs.csv"
+# set log level
+loglevel = "DEBUG"
+
 def variants_main(arguments):
     """
     Main function for pps analysis for yeast data
     :param arguments: user input arguments
     :return: None
     """
-    # set log level
-    loglevel = "DEBUG"
     orfs = check_args(arguments)
     # create output folder with user input name
     run_name = arguments.name
@@ -89,9 +95,8 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
     # keep track of alignment log
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
-    # empty df to save all the variants
+    # empty df to save the summary
     all_summary_file = os.path.join(output, "all_summary.csv")
-
     all_summary = []
     all_mut_df = []
     for f in file_list:
@@ -142,8 +147,7 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
     # process all summary
     all_summary_df = pd.concat(all_summary)
     all_summary_df.to_csv(all_summary_file, index=False)
-    print(all_summary_df)
-    print(all_summary_df.columns)
+
     # process all log
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
@@ -188,37 +192,19 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     n_targeted_full = merged_df[merged_df["fully_covered"] == "y"].shape[0]
     # split gene ID col
     # fully_covered["gene_ID"] = fully_covered["gene_ID"].str.replace(to_replace="-[A-G]", "A")
-    # save all the genes that are found to output
-    # save all the genes that are fully covered to the output folder
-    # merge with target orfs
-    # merged_df = pd.merge(orfs_df, all_found, how="left", left_on="orf_name", right_on="gene_ID")
-    # merged_df = merged_df[~merged_df["gene_ID"].isnull()]
+
     merged_df["db"] = merged_df["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")
     merged_df["count"] = merged_df["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")
     merged_df["gene_name"] = merged_df["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
 
     merged_df = merged_df[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name",
                            "fully_covered", "found"]]
-    # # fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
-    # fully_covered["db"] = fully_covered["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")
-    # fully_covered["count"] = fully_covered["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")
-    # fully_covered["gene_name"] = fully_covered["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
-    #
-    # # merge with target orfs
-    # merged_df_full = pd.merge(orfs_df, fully_covered.drop(['db'], axis=1), how="left", left_on="orf_name",
-    #                      right_on="gene_ID")
-    # merged_df_full = merged_df_full[~merged_df_full["gene_ID"].isnull()]
-    # merged_df_full = merged_df_full[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name"]]
-    # merged_file = os.path.join(sub_output, "merged_with_targets.csv")
-    # merged_df.to_csv(merged_file, index=False)
-    # merged_df.to_csv(all_summary, mode="a", index=False, header=False)
 
     # filter vcf based on QUAL and DP
     mut_count_df = analysis.filter_vcf()
     if not mut_count_df.empty:
-        # label mutations with syn/non-syn
+        # label mutations with syn/non-syn\
         # load all sequences
-        all_seq = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/all_sequence.csv"
         all_seq_df = pd.read_csv(all_seq)
         processed_mut = analysis.process_mut(all_seq_df, mut_count_df)
         # from fully aligned genes, select those with any mutations
@@ -279,9 +265,6 @@ def check_args(arguments):
         if not arguments.fastq or not arguments.ref:
             raise ValueError("Please also provide reference dir and fastq dir")
 
-
-    HIP_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/HIP_targeted_ORFs.csv"
-    other_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/other_targeted_ORFs.csv"
     orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
 
     return orfs

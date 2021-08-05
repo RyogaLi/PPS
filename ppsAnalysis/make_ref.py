@@ -16,15 +16,18 @@ this step needs to be done before submitting jobs for
 alignment 
 """
 
+# set global variables
+HIP_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/HIP_targeted_ORFs.csv"
+other_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/other_targeted_ORFs.csv"
+all_sequence = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/all_sequence.txt"
+
+
 def make_yeast_fasta(output):
     """
 
     :param output: output directory for fasta files
     :return:
     """
-    HIP_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/HIP_targeted_ORFs.csv"
-    other_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/other_targeted_ORFs.csv"
-
     hip_df = pd.read_csv(HIP_target_ORFs)
     other_df = pd.read_csv(other_target_ORFs)
 
@@ -38,6 +41,7 @@ def make_yeast_fasta(output):
             output_hip.write(f"{row['SEQ']}\n")
 
     # make fasta file for plate specific ORFs
+    # for HIP ORFs
     all_plates = hip_df["plate"].unique().tolist()
     for p in all_plates:
         plate_hip = hip_df[hip_df["plate"] == p]
@@ -48,7 +52,6 @@ def make_yeast_fasta(output):
                 platefile.write(f">{seq_id}\n")
                 platefile.write(f"{row['SEQ']}\n")
 
-    all_sequence = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/all_sequence.txt"
     all_seq = pd.read_csv(all_sequence, sep="\t")
     PROTGEN = all_seq[all_seq["source"] == "PROTGEN"]
     SGD = all_seq[all_seq["source"] == "SGD"]
@@ -218,10 +221,7 @@ def compare_human_ref(output):
     :param output:
     :return:
     """
-    """
-        Make reference fasta file with ensembl ref seq
-        :return:
-        """
+
     ref_91 = "/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/20161117_ORFeome91_seqs.csv"
     ref_ensembl = "/home/rothlab/rli/02_dev/06_pps_pipeline/publicdb/merged_ensembl_sequence.csv"
     ref_df_91 = pd.read_csv(ref_91)
@@ -248,6 +248,7 @@ def main(mode, output):
         make_human_fasta_ensembl(output)
     else:
         make_yeast_fasta(output)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plasmid pool sequencing analysis')

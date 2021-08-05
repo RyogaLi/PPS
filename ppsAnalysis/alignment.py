@@ -38,8 +38,6 @@ class Alignment(object):
         :return:
         """
         sam_file = os.path.join(self._output, os.path.basename(self._sample).replace(".fastq.gz", f"{suffix}.sam"))
-        # r2_sam_file = os.path.join(output_path, os.path.basename(r2).replace(".fastq.gz", ".sam"))
-
 
         if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
             r1_cmd = f"bowtie2 -a -p 4 --local -x {reference} -U {self._sample} -S {sam_file}"
