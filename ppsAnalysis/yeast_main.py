@@ -151,7 +151,6 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
 
     # get all the mutations
     all_mut_df = pd.concat(all_mut_df)
-
     # save to file
     all_mut_file = os.path.join(output, "all_mutations.csv")
     all_mut_df.to_csv(all_mut_file, index=False)
@@ -197,8 +196,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     merged_df["count"] = merged_df["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")
     merged_df["gene_name"] = merged_df["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
 
-    merged_df = merged_df[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name",
-                           "fully_covered", "found"]]
+    merged_df = merged_df[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name", "fully_covered", "found"]]
     # # fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
     # fully_covered["db"] = fully_covered["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")
     # fully_covered["count"] = fully_covered["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")
@@ -222,17 +220,17 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
         all_seq_df = pd.read_csv(all_seq)
         processed_mut = analysis.process_mut(all_seq_df, mut_count_df)
         # from fully aligned genes, select those with any mutations
-        fully_aligned_with_mut = pd.merge(merged_df[["gene_ID", "entrez_gene_symbol", "found", "fully_covered"]],
+        fully_aligned_with_mut = pd.merge(merged_df[["orf_name", "gene_name", "found", "fully_covered"]],
                                           processed_mut,
                                           how="left",
-                                          left_on="gene_ID",
-                                          right_on="gene_ID")
+                                          left_on="orf_name",
+                                          right_on="orf_name")
         mut_count_df = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
         n_mut_genes_full = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
-        n_mut_genes_full = n_mut_genes_full["gene_ID"].unique().shape[0]
+        n_mut_genes_full = n_mut_genes_full["orf_name"].unique().shape[0]
 
     else:
-        mut_count_df = pd.DataFrame({}, ["gene_ID", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label",
+        mut_count_df = pd.DataFrame({}, ["orf_name", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label",
                                          "type"])
         n_mut_genes_full = 0
 

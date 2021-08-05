@@ -63,7 +63,28 @@ class yeastAnalysis(object):
                 # else:
                 #     avg_rd = remove_genes[key][1] / remove_genes[key][0]
                 #     remove_genes[key].append(avg_rd)
-        return removed_genes, gene_dict, ref_dict
+        # save all the genes that are fully covered to the output folder
+        fully_covered = pd.DataFrame.from_dict(removed_genes, orient='index').reset_index()
+        fully_covered.columns = ["gene_ID", "gene_len"]
+        fully_covered["fully_covered"] = "y"
+
+        # save all the genes that are found to output
+        # save all the genes that are fully covered to the output folder
+        all_found = pd.DataFrame.from_dict(gene_dict, orient='index').reset_index()
+        all_found.columns = ["gene_ID", "gene_len"]
+        all_found["found"] = "y"
+
+        # save all the genes that are found to output
+        # save all the genes that are fully covered to the output folder
+        all_ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
+        all_ref.columns = ["gene_ID", "gene_len"]
+
+        # join three dfs into one
+        # with column names = ["gene_ID", "gene_len", "fully covered", "found"]
+        # merge all found to all_ref
+        summary = pd.merge(all_ref, all_found[["gene_ID", "found"]], how="left", on="gene_ID")
+        summary = pd.merge(summary, fully_covered[["gene_ID", "fully_covered"]], how="left", on="gene_ID")
+        return summary
 
     def filter_vcf(self):
         """
@@ -114,8 +135,16 @@ class yeastAnalysis(object):
                         label = "SNP"
                     # track how many variants for each gene (with more than 10 reads mapped to it)
                     mut_count.append([l[0], l[1], l[3], mut_base, l[5], mut_counts, info_dict["DP"], label])
+                    print(mut_count)
                     filteredvcf.write(line)
-        return mut_count
+        mut_df = pd.DataFrame(mut_count)
+        mut_cols = ["orf_name", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label"]
+
+        if mut_df.empty:
+            mut_df = pd.DataFrame({}, columns=mut_cols)
+        else:
+            mut_df.columns = mut_cols
+        return mut_df
     
     def process_mut(self, all_df, mut_df):
         """
@@ -125,26 +154,23 @@ class yeastAnalysis(object):
         :return: mut_df with syn label
         """
         # select subset of orfs with mut on this plate
-        merge_mut = pd.merge(mut_df, all_df, how="left", left_on="gene_ID", right_on="ORF_id")
+        merge_mut = pd.merge(mut_df, all_df, how="left", on="orf_name")
         # for each pos, assign codon
         codon = [(int(i)//3)+1 if (int(i)%3 != 0) else int(i)/3 for i in merge_mut["pos"].tolist()]
         merge_mut["codon"] = codon
-
         # first group by ORF name
         # for each group, assign codon
         # SNP
         snp = merge_mut[merge_mut["label"] == "SNP"]
         # add a column for type
         snp["type"] = None
-        print(snp.columns)
-        grouped_snp = snp.groupby(["gene_ID", "codon"]).apply(self._assign_syn)
+        grouped_snp = snp.groupby(["orf_name", "codon"]).apply(self._assign_syn)
         # get indel table
         indel = merge_mut[merge_mut["label"] == "indel"]
         indel["type"] = "indel"
 
         # join two table
         joined = pd.concat([grouped_snp, indel])
-        
         return joined
 
     def _assign_syn(self, group):
