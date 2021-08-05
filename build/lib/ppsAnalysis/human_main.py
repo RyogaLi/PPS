@@ -75,14 +75,8 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     # for each sample, parse vcf files
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
-    all_genes_summary = pd.DataFrame([], columns=["orf_id", 'entrez_gene_id', 'Pool group #', 'entrez_gene_symbol',
-                                                  'Mapped reads', 'Verified', '# mut', 'orf_name', 'gene_ID', 'gene_len'])
-    all_found_summary = os.path.join(output, "all_found_summary.csv")
-    all_genes_summary.to_csv(all_found_summary, index=False)
-
-    all_full_summary = os.path.join(output, "all_full_summary.csv")
-    all_genes_summary.to_csv(all_full_summary, index=False)
-
+    all_summary_file = os.path.join(output, "all_summary.csv")
+    all_summary = []
     all_mut_df = []
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
@@ -103,7 +97,7 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
-        all_log["fastq_ID"] += [fastq_ID]
+        all_log["fastq_ID"] += [fastq_ID] * len(all_log["reads"])
         # for each vcf file, get how many genes are fully aligned
         # get only the subset that are in the group 
         group_ID = fastq_ID.split("_")[-1][-1]
@@ -113,11 +107,11 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
         if os.path.isfile(raw_vcf_file):
             # analysis of ORFs aligned to group specific reference
-            all_summary, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, sub_output, "grch37")
+            all_summary_df, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, sub_output, arguments.refName)
             #fully_covered_file = os.path.join(sub_output, "fully_covered_groupSpecORFs.csv")
             #fully_covered.to_csv(fully_covered_file, index=False)
-            all_summary_file = os.path.join(sub_output, "all_summary_groupSpecORFs.csv")
-            all_summary.to_csv(all_summary_file, index=False)
+            all_group_summary_file = os.path.join(sub_output, "all_summary_groupSpecORFs.csv")
+            all_summary_df.to_csv(all_group_summary_file, index=False)
 
             #fully_covered.to_csv(all_full_summary, index=False, header=False, mode="a")
             #all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
@@ -125,8 +119,13 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
             stats_list.append("groupSpecORFs")
             genes_found.append(stats_list)
             mut_df["sample"] = fastq_ID
+            all_summary_df["sample"] = fastq_ID
             all_mut_df.append(mut_df)
-    print(all_log)
+            all_summary.append(all_summary_df)
+    
+    # process all summary
+    all_summary_df = pd.concat(all_summary)
+    all_summary_df.to_csv(all_summary_file, index=False)
     # process all log
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
@@ -219,8 +218,12 @@ def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
         processed_mut.to_csv(mut_file)
     else:
         processed_mut = pd.read_csv(mut_file)
+        processed_mut = processed_mut.drop(processed_mut.columns[0], axis=1)
     # from fully aligned genes, select those with any mutations
-    fully_aligned_with_mut = pd.merge(merged_df, processed_mut, how="left", left_on="gene_ID",
+    fully_aligned_with_mut = pd.merge(merged_df[["gene_ID", "entrez_gene_symbol", "found", "fully_covered", "gene_len", "gene_len_mapped", "aligned_perc"]],
+                                      processed_mut,
+                                      how="left",
+                                      left_on="gene_ID",
                                       right_on="gene_ID")
     mut_count_df = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
     n_mut_genes_full = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
@@ -268,6 +271,7 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--name", help="Run name", default="human_test0")
     parser.add_argument('-o', "--output", help='Output directory', default="/home/rothlab/rli/02_dev/06_pps_pipeline/output/")
     parser.add_argument('-r', "--ref", help='Path to reference', default="/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/")
+    parser.add_argument("--refName", help="grch37, grch38, cds_seq")
     args = parser.parse_args()
 
     variants_main(args)

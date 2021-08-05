@@ -142,8 +142,6 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
     # process all summary
     all_summary_df = pd.concat(all_summary)
     all_summary_df.to_csv(all_summary_file, index=False)
-    print(all_summary_df)
-    print(all_summary_df.columns)
     # process all log
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
@@ -196,7 +194,7 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     merged_df["count"] = merged_df["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")
     merged_df["gene_name"] = merged_df["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
 
-    merged_df = merged_df[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name", "fully_covered", "found"]]
+    merged_df = merged_df[["orf_name", "ORF_NAME_NODASH", "SYMBOL", "len(seq)", "plate", "db", "gene_name", "fully_covered", "found", "gene_len_mapped", "aligned_perc"]]
     # # fully_covered = fully_covered.replace(to_replace ='-index[0-9]+', value = '', regex = True)
     # fully_covered["db"] = fully_covered["gene_ID"].str.extract(r".*-([A-Z]+)-[1-9]")
     # fully_covered["count"] = fully_covered["gene_ID"].str.extract(r".*-[A-Z]+-([1-9])")

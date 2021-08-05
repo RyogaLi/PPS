@@ -25,13 +25,15 @@ class humanAnalysis(object):
         self._basename = basename
         # contains all the targeted orfs for this sample
         self._orfs = orfs_df
+        self._ref = ref
         if ref == "grch37":
             self._seq_col = "grch37_filled"
         elif ref == "grch38":
             self._seq_col = "grch38_filled"
         else:
             self._seq_col = "cds_seq"
-            
+           
+        print(self._ref)
     def get_full_cover(self):
         """
         Get a dictionary of gene names which are fully covered(aligned) in vcf file
@@ -39,6 +41,7 @@ class humanAnalysis(object):
         """
         gene_dict = {}
         ref_dict = {}
+        temp_tracker = {}
         with open(self._rawvcf, "r") as raw:
             for line in raw:
                 # in vcf header, grep gene names and gene len
@@ -54,11 +57,14 @@ class humanAnalysis(object):
                         #rd = re.search("DP=([0-9]+)", line[7])
                         #rd = rd.group(1)
                         gene_dict[line[0]] = 1
+                        temp_tracker[line[0]] = [int(line[1])]
                     else:
                         # grep read depth information from INFO section
                         #rd = re.search("DP=([0-9]+)", line[7])
                         #rd = rd.group(1)
-                        gene_dict[line[0]] += 1
+                        if int(line[1]) not in temp_tracker[line[0]]:
+                            gene_dict[line[0]] += 1
+                            temp_tracker[line[0]].append(int(line[1]))
                         #gene_dict[line[0]][1] += int(rd)
             remove_genes = gene_dict.copy()
             for key in gene_dict.keys():
@@ -75,7 +81,7 @@ class humanAnalysis(object):
         # save all the genes that are found to output
         # save all the genes that are fully covered to the output folder
         all_found = pd.DataFrame.from_dict(gene_dict, orient='index').reset_index()
-        all_found.columns = ["gene_ID", "gene_len"]
+        all_found.columns = ["gene_ID", "gene_len_mapped"]
         all_found["found"] = "y"
 
         # save all the genes that are found to output
@@ -86,9 +92,9 @@ class humanAnalysis(object):
         # join three dfs into one
         # with column names = ["gene_ID", "gene_len", "fully covered", "found"]
         # merge all found to all_ref
-        summary = pd.merge(all_ref, all_found[["gene_ID", "found"]], how="left", on="gene_ID")
+        summary = pd.merge(all_ref, all_found[["gene_ID", "found", "gene_len_mapped"]], how="left", on="gene_ID")
         summary = pd.merge(summary, fully_covered[["gene_ID", "fully_covered"]], how="left", on="gene_ID")
-
+        summary["aligned_perc"] = summary["gene_len_mapped"]/summary["gene_len"]
         return summary
 
     def filter_vcf(self):
@@ -174,6 +180,10 @@ class humanAnalysis(object):
         joined = pd.concat([grouped_snp, indel])
         joined_non_syn = joined[(joined["type"] == "non_syn") | (joined["type"] == "indel") | (joined["type"] == "non_syn_ref")]
         # get gnomad variants for genes in the table
+        # only if we used grch as ref
+        if "grch" not in self._ref:
+            return joined
+
         merge_gnomad = []
         gene_list = joined_non_syn.gene_ID.unique().tolist()
         for gene in gene_list:
@@ -222,7 +232,8 @@ class humanAnalysis(object):
             mut_pro = table["".join(mut_codon)]
             if pro == mut_pro:
                 group["type"] = "syn"
-            else:
+            # only check this when we use grch reference
+            if "grch" in self._ref:
                     # # check if this maps the hORFEOME reference sequence
                 refseq = group["cds_seq"].values[0]
                 codon_ref = refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
@@ -235,6 +246,8 @@ class humanAnalysis(object):
                     #print(group.gene_ID.values[0])
                 else:
                     group["type"] = "non_syn"
+            else:
+                group["type"] = "non_syn"
         else: # two or three variants in the same codon
             group["mut_pos"] = group["pos"].astype(int) % 3 - 1
             for i, r in group.iterrows():
@@ -242,7 +255,7 @@ class humanAnalysis(object):
             mut_pro = table["".join(mut_codon)]
             if pro == mut_pro:
                 group["type"] = "syn"
-            else:
+            if "grch" in self._ref:
                     # get grch37 codon 
                     # check if this maps the grch37 reference sequence
                 refseq = group["cds_seq"].values[0]
@@ -255,6 +268,8 @@ class humanAnalysis(object):
                     #     track_syn += ["mapped_diffref"] * group["mut_pos"].shape[0]
                 else:
                     group["type"] = "non_syn"
+            else:
+                group["type"] = "non_syn"
         return group
 
     def _get_gnomAD(self, gene_ID):
