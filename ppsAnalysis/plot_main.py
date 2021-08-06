@@ -22,6 +22,10 @@ class PlotObjYeast(object):
         :param inputdir: input directory contains all the output files from the server
         """
         self._dir = inputdir
+         # file contains all fully covered genes
+        self._all_summary = pd.read_csv(os.path.join(self._dir, "all_summary.csv"))
+        # file contains all found genes
+        self._all_mut = pd.read_csv(os.path.join(self._dir, "all_mutations.csv"))
 
     def make_venn(self, orfs):
         """
@@ -323,6 +327,44 @@ class PlotObjYeast(object):
         plt.savefig(os.path.join(self._dir, "./n_gene_with_variants.png"))
         plt.close()
 
+    def make_perc_coverred_dist(self):
+        """
+        from all summary, plot perc covered by sequencing data on bar plot
+        For All, HIP, Supp-SGD and Supp-PROT
+        :return:
+        """
+        print(self._all_summary.columns)
+        print(self._all_mut.columns)
+        not_fully_covered = self._all_summary.loc[(self._all_summary["aligned_perc"] != 1) & (self._all_summary["found"] == "y")]
+        HIP = not_fully_covered[not_fully_covered["db"] == "HIP"]
+        SGD = not_fully_covered[not_fully_covered["db"] == "SGD"]
+        PROT = not_fully_covered[not_fully_covered["db"] == "PROTGEN"]
+        print(self._all_summary.db.value_counts())
+
+        fig, ax = plt.subplots(figsize=(10, 12))
+        sns.displot(HIP.aligned_perc*100, bins=40, ax=ax, color="#084c61", edgecolor="#084c61")
+        plt.title("HIP ORFs")
+        plt.xlabel("Percent of ORF len aligned")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "nfully_HIP_perc_dist.png"))
+        plt.close()
+
+        fig, ax = plt.subplots(figsize=(10, 12))
+        sns.displot(SGD.aligned_perc*100, bins=40, ax=ax, color="#084c61", edgecolor="#084c61")
+        plt.title("Supp-SGD ORFs")
+        plt.xlabel("Percent of ORF len aligned")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "nfully_SGD_perc_dist.png"))
+
+        fig, ax = plt.subplots(figsize=(10, 12))
+        sns.displot(PROT.aligned_perc*100, bins=40, ax=ax, color="#084c61", edgecolor="#084c61")
+        plt.title("Supp-PROT ORFs")
+        plt.xlabel("Percent of ORF len aligned")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "nfully_PROT_perc_dist.png"))
+
+        plt.close()
+
 
 class PlotObjHuman(object):
 
@@ -332,6 +374,10 @@ class PlotObjHuman(object):
         :param inputdir: input directory contains all the output files from the server
         """
         self._dir = inputdir
+         # file contains all fully covered genes
+        self._all_summary = pd.read_csv(os.path.join(self._dir, "all_summary.csv"))
+        # file contains all found genes
+        self._all_mut = pd.read_csv(os.path.join(self._dir, "all_mutations.csv"))
 
     def make_fully_covered_withmut_bar_plot(self):
         """
@@ -489,6 +535,24 @@ class PlotObjHuman(object):
         plt.savefig(os.path.join(self._dir, "./allORFs_venn3_variants.png"))
         plt.close()
 
+    def make_perc_coverred_dist(self):
+        """
+        from all summary, plot perc covered by sequencing data on bar plot
+        For All, HIP, Supp-SGD and Supp-PROT
+        :return:
+        """
+        print(self._all_summary.columns)
+        print(self._all_mut.columns)
+        not_fully_covered = self._all_summary.loc[(self._all_summary["aligned_perc"] < 1) & (self._all_summary["found"] == "y")]
+        print(self._all_summary["aligned_perc"])
+        print(not_fully_covered.shape)
+        fig, ax = plt.subplots(figsize=(10, 12))
+        sns.displot(not_fully_covered.aligned_perc*100, bins=40, ax=ax, color="#084c61", edgecolor="#084c61")
+        plt.title("Human 9.1 ORFs")
+        plt.xlabel("Percent of ORF len aligned")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "nfully_human91_perc_dist.png"))
+
 
 def read_human_csv(human91_ORFs):
     humanallORF = pd.read_csv(human91_ORFs)
@@ -525,18 +589,19 @@ def plot_main(inputdir):
     if args.m == "yeast":
 
         plot_obj = PlotObjYeast(inputdir)
-        HIP_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/HIP_targeted_ORFs.csv"
-        other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
-        orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
-        plot_obj.make_fully_covered_withmut_bar_plot()
+        # HIP_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/HIP_targeted_ORFs.csv"
+        # other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
+        # orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
+        # plot_obj.make_fully_covered_withmut_bar_plot()
         # # # plot_obj.make_venn_variants(orfs)
-        plot_obj.make_venn(orfs)
-        plot_obj.plot_n_variants()
+        # plot_obj.make_venn(orfs)
+        # plot_obj.plot_n_variants()
+        plot_obj.make_perc_coverred_dist()
     else:
         plot_obj = PlotObjHuman(inputdir)
-        plot_obj.make_fully_covered_withmut_bar_plot()
-        plot_obj.make_venn()
-
+        # plot_obj.make_fully_covered_withmut_bar_plot()
+        # plot_obj.make_venn()
+        plot_obj.make_perc_coverred_dist()
 
 if __name__ == '__main__':
 
