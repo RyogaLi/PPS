@@ -90,14 +90,16 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
             continue
         # get information from the log file to make a summary log file for all the samples
         with open(log_file, "r") as log_f:
+            n_sample = 0
             for line in log_f:
                 if "reads;" in line:
+                    n_sample+=1
                     n_reads = line.split(" ")[0]
                     all_log["reads"].append(n_reads)
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
-        all_log["fastq_ID"] += [fastq_ID] * len(all_log["reads"])
+        all_log["fastq_ID"] += [fastq_ID] * n_sample
         # for each vcf file, get how many genes are fully aligned
         # get only the subset that are in the group 
         group_ID = fastq_ID.split("_")[-1][-1]
@@ -125,8 +127,19 @@ def parse_vcf_files_human(output, file_list, arguments, orfs, logger):
     
     # process all summary
     all_summary_df = pd.concat(all_summary)
+    all_summary_df = all_summary_df.reset_index(drop=True)
+    # reset fully covered 
+    # because some ORFs has no stop codon, but the files are not consistant 
+    if arguments.refName == "grch37":
+        col_name = "grch37_filled"
+    else:
+        col_name = arguments.refName
+    all_summary_df["adjusted_gene_len"] = all_summary_df.loc[all_summary_df[col_name].str.endswith(('TAA', 'TAG', 'TGA'))]["gene_len"] - 3
+    all_summary_df.loc[all_summary_df["adjusted_gene_len"] <= all_summary_df["gene_len_mapped"], "fully_covered"] = "y"
+    all_summary_df["aligned_perc"] = all_summary_df["gene_len_mapped"]/all_summary_df["adjusted_gene_len"]
     all_summary_df.to_csv(all_summary_file, index=False)
     # process all log
+    print(all_log)
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log.to_csv(all_log_file, index=False)

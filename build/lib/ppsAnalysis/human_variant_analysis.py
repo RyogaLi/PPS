@@ -95,6 +95,7 @@ class humanAnalysis(object):
         summary = pd.merge(all_ref, all_found[["gene_ID", "found", "gene_len_mapped"]], how="left", on="gene_ID")
         summary = pd.merge(summary, fully_covered[["gene_ID", "fully_covered"]], how="left", on="gene_ID")
         summary["aligned_perc"] = summary["gene_len_mapped"]/summary["gene_len"]
+        print(summary)
         return summary
 
     def filter_vcf(self):
