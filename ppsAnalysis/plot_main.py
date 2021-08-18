@@ -16,16 +16,19 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 class PlotObjYeast(object):
 
-    def __init__(self, inputdir):
+    def __init__(self, inputdir, summary_file, mutation_file):
         """
         Initialize plot object
         :param inputdir: input directory contains all the output files from the server
         """
         self._dir = inputdir
          # file contains all fully covered genes
-        self._all_summary = pd.read_csv(os.path.join(self._dir, "all_summary.csv"))
-        # file contains all found genes
-        self._all_mut = pd.read_csv(os.path.join(self._dir, "all_mutations.csv"))
+        # self._all_summary = pd.read_csv(os.path.join(self._dir, "all_summary.csv"))
+        # # file contains all found genes
+        # self._all_mut = pd.read_csv(os.path.join(self._dir, "all_mutations.csv"))
+        #
+        self._all_summary = summary_file
+        self._all_mut = mutation_file
 
     def make_venn(self, orfs):
         """
@@ -301,8 +304,8 @@ class PlotObjYeast(object):
         plt.close()
 
     def plot_n_variants(self):
-        all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
-        all_mut = pd.read_csv(all_mut_summary)
+        # all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
+        all_mut = pd.read_csv(self._all_mut)
         all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
         all_mut["gene_name"] = all_mut["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
         v_counts = all_mut[["gene_name", "db"]].value_counts().to_frame().reset_index()
@@ -585,10 +588,10 @@ def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     return combined
 
 
-def plot_main(inputdir):
+def plot_main(inputdir, summary, mut):
     if args.m == "yeast":
 
-        plot_obj = PlotObjYeast(inputdir)
+        plot_obj = PlotObjYeast(inputdir, summary, mut)
         # HIP_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/HIP_targeted_ORFs.csv"
         # other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
         # orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
@@ -607,8 +610,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Plasmid pool sequencing analysis (plots)')
     parser.add_argument('-i', help='input dir')
+    parser.add_argument('-s', help='summary')
+    parser.add_argument('-mut', help='mut_summary')
     parser.add_argument('-m', help='mode')
 
     args = parser.parse_args()
 
-    plot_main(args.i)
+    plot_main(args.i, args.s, args.mut)

@@ -86,7 +86,7 @@ class yeastAnalysis(object):
         # join three dfs into one
         # with column names = ["gene_ID", "gene_len", "fully covered", "found"]
         # merge all found to all_ref
-        summary = pd.merge(all_ref, all_found[["gene_ID", "gene_len_mapped", "found"]], how="left", on="gene_ID")
+        summary = pd.merge(all_ref, all_found[["gene_ID", "gene_len_mapped", "found"]], how="outer", on="gene_ID")
         summary = pd.merge(summary, fully_covered[["gene_ID", "fully_covered"]], how="left", on="gene_ID")
         summary["aligned_perc"] = summary["gene_len_mapped"]/summary["gene_len"]
         return summary
