@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: PPS-analysis
-Version: 0.0.1
+Version: 0.1.0
 Summary: Analysis for plasmid pool sequencing data
 Home-page: https://github.com/RyogaLi/PPS
 Author: ROUJIA LI
@@ -14,44 +14,75 @@ Description: ## Dependencies
         * [samtools version 1.4](https://sourceforge.net/projects/samtools/files/)
         
         ## Build reference
-        * The reference files used for the analysis can be found in ``
-        * If you need to build new references, please follow the steps:
-            1. 
-        
-        ## Input
-        * Reference file: 
-        * For paired fastq files: `*_R1.fastq` and `*_R2.fastq` 
-        * For unpaired fastq files: `*.fastq`
-        * To combine unpaired r1 and r2 fastq files, please provide path to fastq files in `conf.py` then run:
+        * The pre-built reference files used for the analysis can be found in
+            1. human grch37: `/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_ensembl/grch37`
+            2. human grch38: `/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_ensembl/grch38`
+            3. human 9.1: `/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91`
+            4. yeast (palte specific): `/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/yeast_ref_all`
+        * If you need to build new references, please make sure:
+            1. Name for the reference is the same as name for the sequencing files. For example, the corresponding reference for `scORFeome-HIP-05_L001.fastq.gz` is `scORFeome-HIP-05`
+            2. ID for each sequence matches the ORF-id in the summary file 
             
-            ```
-            python src/sup.py combine
-            ```
-            Combined fastq files will be saved into the same directory as old fastq files
-         
+        ## Make summary file
+        * The summary files for human and yeast are premade before running the pipeline, the raw data can be found: `/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/human_summary.csv` and `/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/yeast_summary.csv`
+        * If you are making your own summary file, make sure you have a column with the name `orf_name`, which is the unique identifier for each ORF, this should also map with the sequence names in the fasta file you make. You can modify in `main.py: analysisHuman or analysisYeast` to select columns you want to keep
         
-        ## Run
-        0. If you haven't build index for the fasta file, please run the following command to build index files
-            
-            ```bash
-            bowtie2-build [options]* path_to_your_ref.fasta reference_name
-            ```
-            
-        1. Please goto `./src/conf.py` to change all the required input parameters
-        2. Run the pipeline
+        ## Input FASTQ files
+        * FASTQ files:
+          1. human (files from the same group are merged together): `/home/rothlab/rli/01_ngsdata/PPS_data/Human_pool/merged_pool9-1/`
+          2. yeast (files from the same plate are merged together): `/home/rothlab/rli/01_ngsdata/PPS_data/yeast_pps_fastq/yeast_pps_fastq/`
         
-            ```bash
-            python ./src/main.py
+        ## Install and Run
+        * install the package using: ``
             ```
+          usage: pps [-h] [--align] [-f FASTQ] [-n NAME] -o OUTPUT -r REF
+                   [--refName REFNAME] [--summaryFile SUMMARYFILE] [--orfseq ORFSEQ]
+          Plasmid pool sequencing analysis
+        
+          required arguments:
+          -f FASTQ, --fastq FASTQ
+                                path to fastq files
+          -o OUTPUT, --output OUTPUT
+                                Output directory
+          -r REF, --ref REF     Path to reference
+          -m MODE, --mode MODE  human or yeast
+          --summaryFile SUMMARYFILE
+                                Yeast or Human summary file
+          
+          optional arguments:
+          -h, --help            show this help message and exit
+          --align               provide this argument if users want to start with
+                                alignment, otherwise the program assumes alignment was
+                                done and will analyze the vcf files.
+          -n NAME, --name NAME  Run name (default set to pps)
+        
+          --refName REFNAME     grch37, grch38, cds_seq. Required if mode == human
+          -l LOG, --log LOG logging mode, default set to info
+          ```
+        * Example: Human (with alignment to grch37)
+          
+          `pps -f ~/01_ngsdata/PPS_data/Human_pool/merged_pool9-1/ -o ../../output/ -n Human91 --refName human91 --summaryFile ../../target_orfs/human_summary.csv -m human -r ../../fasta/human_91/ --align`
+        
+        * Yeast 
+          
+          `pps -f ~/01_ngsdata/PPS_data/yeast_pps_fastq/yeast_pps_fastq/ -o ../../output/ -n testpackYeast --summaryFile ../../target_orfs/yeast_summary.csv -m yeast -r ../../fasta/yeast_ref_all/`
+        
+        * The pipeline first submit alignment jobs to the cluster (slurm), after all the jobs are done, it filters vcf files, output summary and mutations
         
         ## Output
-        1. All the intermediate files will be saved into your output directory
-        2. A summary file in `.csv` format will be created
-        
-        ## Additional Analysis (for yeast PPS data)
-        
-        ## Notes 
-        * Please goto [wiki page](https://github.com/RyogaLi/PPS/wiki) for more information
+        * All the intermediate files will be saved into your output directory, a new folder will be made with the `-n` parameter 
+        * For each fastq file, a folder will be made. It contains the following files:
+          1. `*.sh`: alignment job script used for alignment
+          2. `all_summary_plateORFs.csv`: summary for this plate/group
+          3. `*.log`: log file
+          4. `*_raw.vcf`: raw vcf file generated from pileup
+          5. `*_variants.vcf`: vcf file with variants only
+          6. `*_filtered.vcf`: filtered vcf file 
+        * After the run is finished, the following files will be generated in the master output folder:
+          1. `alignment_log.csv`: shows the alignment rate for each plate/group
+          2. `all_mutations.csv`: contains all the variants passed filter 
+          3. `all_summary.csv`: contains all ORFs and if they were found/fully covered in the sequencing
+          4. `genes_stats.csv`: overall stats
         
 Platform: UNKNOWN
 Classifier: Development Status :: 3 - Alpha

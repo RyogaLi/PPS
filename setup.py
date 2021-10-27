@@ -20,7 +20,7 @@ with open("README.md", "r") as fh:
 
 
 setup(
-    name="PPS analysis",
+    name="PlasmidPoolAnalysis",
     version="0.1.0", # CHANGE RELEASE NOTE IN MAIN
     author="ROUJIA LI",
     author_email="roujia.li@mail.utoronto.ca",

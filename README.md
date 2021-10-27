@@ -25,7 +25,7 @@
   2. yeast (files from the same plate are merged together): `/home/rothlab/rli/01_ngsdata/PPS_data/yeast_pps_fastq/yeast_pps_fastq/`
 
 ## Install and Run
-* install the package using: ``
+* install the package using: `pip install PlasmidPoolAnalysis`
     ```
   usage: pps [-h] [--align] [-f FASTQ] [-n NAME] -o OUTPUT -r REF
            [--refName REFNAME] [--summaryFile SUMMARYFILE] [--orfseq ORFSEQ]
