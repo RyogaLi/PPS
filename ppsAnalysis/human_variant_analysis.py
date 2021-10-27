@@ -18,7 +18,7 @@ class humanAnalysis(object):
     def __init__(self, input_vcf, basename, orfs_df, ref):
         """
         Take vcf file from input dir
-        :param input_: Input dir contains vcf files, sam files and bam files
+        :param input_vcf: Input dir contains vcf files, sam files and bam files
         """
         self._rawvcf = input_vcf
         self._vvcf = input_vcf.replace("_raw", "_variants")
@@ -33,11 +33,10 @@ class humanAnalysis(object):
         else:
             self._seq_col = "cds_seq"
            
-        print(self._ref)
     def get_full_cover(self):
         """
         Get a dictionary of gene names which are fully covered(aligned) in vcf file
-        :return: dictionary with keys = gene names; value = gene length
+        :return: dataframe with column names:  ["gene_ID", "gene_len", "fully covered", "found"]
         """
         gene_dict = {}
         ref_dict = {}
@@ -52,27 +51,24 @@ class humanAnalysis(object):
                 # not a header line
                 if "#" not in line:
                     line = line.split()
+                    # try to find the gene in gene_dict
                     if gene_dict.get(line[0], -1) == -1:
                         # grep read depth information from INFO section
-                        #rd = re.search("DP=([0-9]+)", line[7])
-                        #rd = rd.group(1)
                         gene_dict[line[0]] = 1
+                        # temp tracker is used to track which positions were mapped on the given gene
                         temp_tracker[line[0]] = [int(line[1])]
                     else:
-                        # grep read depth information from INFO section
-                        #rd = re.search("DP=([0-9]+)", line[7])
-                        #rd = rd.group(1)
+                        # if the given position not in the list for that gene
                         if int(line[1]) not in temp_tracker[line[0]]:
                             gene_dict[line[0]] += 1
                             temp_tracker[line[0]].append(int(line[1]))
-                        #gene_dict[line[0]][1] += int(rd)
             remove_genes = gene_dict.copy()
+            # go through the genes
             for key in gene_dict.keys():
+                # if mapped len is smaller than the reference len
                 if gene_dict[key] < int(ref_dict[key]):
                     del remove_genes[key]
-                #else:
-                #    avg_rd = remove_genes[key][1] / remove_genes[key][0]
-                #    remove_genes[key].append(avg_rd)
+
         # save all the genes that are fully covered to the output folder
         fully_covered = pd.DataFrame.from_dict(remove_genes, orient='index').reset_index()
         fully_covered.columns = ["gene_ID", "gene_len"]
@@ -84,7 +80,7 @@ class humanAnalysis(object):
         all_found.columns = ["gene_ID", "gene_len_mapped"]
         all_found["found"] = "y"
 
-        # save all the genes that are found to output
+        # save all the ref genes
         # save all the genes that are fully covered to the output folder
         all_ref = pd.DataFrame.from_dict(ref_dict, orient='index').reset_index()
         all_ref.columns = ["gene_ID", "gene_len"]
@@ -101,6 +97,9 @@ class humanAnalysis(object):
         """
         for a given vcf (with variants only), filter the variants based on QUAL and DP
         write passed filter variants to a new vcf file
+        Filtering criteria:
+        1. informative read depth >= 10
+        2. variant call quality >= 20
         """
 
         filtered_vcf = self._vvcf.replace("_variants", "_filtered")
@@ -200,6 +199,7 @@ class humanAnalysis(object):
     def _assign_syn(self, group):
         """
         Assign syn/non syn to each variant
+        :param group: snp groupped by gene_ID and codon
         """
         table = {
             'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
@@ -226,6 +226,7 @@ class humanAnalysis(object):
             return group
         pro = table[codon_seq]
         mut_codon = list(codon_seq)
+        # one variant in the codon
         if group.shape[0] == 1:
             mut_pos = int(group["pos"]) % 3 - 1
             mut_codon[mut_pos] = group["alt"].values[0]
@@ -234,21 +235,21 @@ class humanAnalysis(object):
                 group["type"] = "syn"
             # only check this when we use grch reference
             if "grch" in self._ref:
-                    # # check if this maps the hORFEOME reference sequence
+                # # check if this maps the hORFEOME reference sequence
                 refseq = group["cds_seq"].values[0]
                 codon_ref = refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
                 if codon_ref == "":
                     group["type"] = "non_syn"
                 elif mut_codon[mut_pos] == codon_ref[mut_pos]:
+                    # when it says non_syn_ref, it means this is a non syn change but matched
+                    # our reference
                     group["type"] = "non_syn_ref"
-                    #     track_syn.append("mapped_diffref")
-                    # else:
-                    #print(group.gene_ID.values[0])
                 else:
                     group["type"] = "non_syn"
             else:
                 group["type"] = "non_syn"
-        else: # two or three variants in the same codon
+        # two or three variants in the same codon
+        else:
             group["mut_pos"] = group["pos"].astype(int) % 3 - 1
             for i, r in group.iterrows():
                 mut_codon[r["mut_pos"]] = r["alt"]
@@ -256,8 +257,8 @@ class humanAnalysis(object):
             if pro == mut_pro:
                 group["type"] = "syn"
             if "grch" in self._ref:
-                    # get grch37 codon 
-                    # check if this maps the grch37 reference sequence
+                # get grch37 codon
+                # check if this maps the hORFEOME reference sequence
                 refseq = group["cds_seq"].values[0]
                 codon_ref = refseq[int(group["codon"].values[0] - 1) * 3:int(group["codon"].values[0]) * 3]
                 if codon_ref == "":

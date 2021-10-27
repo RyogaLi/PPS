@@ -5,8 +5,13 @@
 
 * [samtools version 1.4](https://sourceforge.net/projects/samtools/files/)
 
+## Build reference
+* The reference files used for the analysis can be found in ``
+* If you need to build new references, please follow the steps:
+    1. 
+
 ## Input
-* Reference file: `reference.fasta`
+* Reference file: 
 * For paired fastq files: `*_R1.fastq` and `*_R2.fastq` 
 * For unpaired fastq files: `*.fastq`
 * To combine unpaired r1 and r2 fastq files, please provide path to fastq files in `conf.py` then run:

@@ -1,13 +1,7 @@
-#!/usr/bin/env python#VERSION#
-
-# Author: Roujia Li
-# email: Roujia.li@mail.utoronto.ca
-
-import glob
-
-import pandas as pd
-import numpy as np
+#!/usr/bin/env python3.7
 import os
+import glob
+import pandas as pd
 import argparse
 import seaborn as sns
 
@@ -16,12 +10,9 @@ import ppsAnalysis.cluster
 import ppsAnalysis.yeast_variant_analysis
 import ppsAnalysis.human_variant_analysis
 import ppsAnalysis.logthis
-import matplotlib.pyplot as plt
-from matplotlib_venn import venn2, venn2_circles, venn2_unweighted
+# Author: Roujia Li
+# email: Roujia.li@mail.utoronto.ca
 
-"""
-DEPRECIATED
-"""
 
 def variants_main(arguments):
     """
@@ -65,46 +56,48 @@ def variants_main(arguments):
             sh_file = os.path.join(sub_output, f"{fastq_ID}.sh")
             f = os.path.join(arguments.fastq, f)
             alignment_obj = ppsAnalysis.alignment.Alignment(arguments.ref, arguments.mode, f, sub_output, sh_file, align_log)
-            # the main function writes to the sh file ans submit the file to cluster
-            # return job ID
             at = 9
             job_id = alignment_obj.main(at)
             all_alignment_jobs.append(job_id)
-
         # track all alignment jobs
         cluster_log = log_obj.get_logger("alignment.log")
         jobs_finished = ppsAnalysis.cluster.parse_jobs_galen(all_alignment_jobs, cluster_log)
         if jobs_finished:
             main_logger.info("Alignment jobs all finished")
+    # start barcode counting
+    if arguments.mode == "human":
+        parse_vcf_files(output, file_list, arguments, orfs, main_logger)
+    elif arguments.mode == "yeast":
+        parse_vcf_files(output, file_list, arguments, orfs, main_logger)
 
-    parse_vcf_files_yeast(output, file_list, orfs, main_logger)
 
-
-def parse_vcf_files_yeast(output, file_list, orfs, logger):
+def parse_vcf_files(output, file_list, arguments, orfs, logger):
     """
-    Parse vcf files for each sample
-    :param output:
-    :param file_list: list of fastq files
-    :param orfs: dataframe contains all the targeted ORFs
-    :param logger: logging object
+    Process each vcf file based on mode, call human/yeast analysis script separately
+    :param output: output directory
+    :param file_list: file list (fastq files)
+    :param arguments: user input arguments
+    :param logger:
+    :param mode:
     :return:
     """
-    # keep track of alignment log
+    # for each sample, parse vcf files
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
-    # empty df to save all the variants
-    # all_summary_file = os.path.join(output, "all_summary.csv")
-
-    all_summary_plate, all_summary_all, all_summary_subset = [], [], []
-    all_mut_df_plate, all_mut_df_all, all_mut_df_subset = [], [], []
+    all_summary_file = os.path.join(output, "all_summary.csv")
+    all_summary = []
+    all_mut_df = []
+    # go through files in the file list
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
         fastq_ID = f.split("_")[0]
         sub_output = os.path.join(os.path.abspath(output), fastq_ID)
 
-        # get the latest log file from dir
-        log_file = glob.glob(f"{sub_output}/*.log")[-1]
-        if not os.path.isfile(log_file):
+        # there should be only one log file in the dir
+        # this log file contains sam alignment rate
+        try:
+            log_file = glob.glob(f"{sub_output}/*.log")[0]
+        except:
             logger.warning(f"log file does not exist: {fastq_ID}")
             continue
 
@@ -121,113 +114,62 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
                     all_log["map_perc"].append(perc_aligned)
 
         all_log["fastq_ID"] += [fastq_ID] * n_sample
-        # for each vcf file, get how many genes are fully aligned
-        orfs_df = orfs[orfs["plate"] == fastq_ID]
-        raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_plateORFs_raw.vcf")
-        if os.path.isfile(raw_vcf_file):
+        # depends on which data set we are processing
+        if arguments.mode == "human":
+            group_ID = fastq_ID.split("_")[-1][-1]
+            # for human sequencing data, we process one group at a time
+            orfs_df = orfs[orfs["Pool group #"] == int(group_ID)]
+            raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_group_spec_orfs_raw.vcf")
+            # if the file is not found, raise error
+            if not os.path.isfile(raw_vcf_file):
+                raise FileNotFoundError(f"{raw_vcf_file}")
+            # analysis of ORFs aligned to group specific reference
+            all_summary_df, stats_list, mut_df = analysisHuman(raw_vcf_file, fastq_ID, orfs_df, sub_output, arguments.refName)
+
+            all_group_summary_file = os.path.join(sub_output, "all_summary_groupSpecORFs.csv")
+            all_summary_df.to_csv(all_group_summary_file, index=False)
+
+            stats_list.append("groupSpecORFs")
+            genes_found.append(stats_list)
+            mut_df["sample"] = fastq_ID
+            all_summary_df["sample"] = fastq_ID
+            all_mut_df.append(mut_df)
+            all_summary.append(all_summary_df)
+
+        elif arguments.mode == "yeast":
+            # for each vcf file, get how many genes are fully aligned
+            # for yeast, we aligned all the orfs to ORFs on each plate
+            orfs_df = orfs[orfs["plate"] == fastq_ID]
+            raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_plateORFs_raw.vcf")
+
             # analysis of ORFs aligned to subgroup
             all_summary_df, stats_list, mut_df= analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-            # fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
-            # fully_covered.to_csv(fully_covered_file, index=False)
             all_group_summary_file = os.path.join(sub_output, "all_summary_plateORFs.csv")
-            all_summary_df.to_csv(all_group_summary_file, index=False)            # all_found.to_csv(all_found_file, index=False)
-            # fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
-            # all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
+            all_summary_df.to_csv(all_group_summary_file, index=False)
 
             db = all_summary_df["db"].unique()
             stats_list.append("plateORFs")
             genes_found.append(stats_list)
             mut_df["plate"] = fastq_ID
             mut_df["db"] = db[0]
-            all_mut_df_plate.append(mut_df)
+            all_mut_df.append(mut_df)
             all_summary_df["db"] = db[0]
-            all_summary_plate.append(all_summary_df)
+            all_summary.append(all_summary_df)
 
-        raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allORFs_raw.vcf")
-        if os.path.isfile(raw_vcf_file):
-            # analysis of ORFs aligned to subgroup
-            all_summary_df, stats_list, mut_df= analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-            # fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
-            # fully_covered.to_csv(fully_covered_file, index=False)
-
-            all_group_summary_file = os.path.join(sub_output, "all_summary_allORFs.csv")
-            all_mut_file = os.path.join(sub_output, "all_mutation_allORFs.csv")
-
-            all_summary_df.to_csv(all_group_summary_file, index=False)            # all_found.to_csv(all_found_file, index=False)
-            # fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
-            # all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
-
-            db = all_summary_df["db"].unique()
-            stats_list.append("allORFs")
-            genes_found.append(stats_list)
-            mut_df["plate"] = fastq_ID
-            mut_df["db"] = db[0]
-            all_mut_df_all.append(mut_df)
-            all_summary_df["db"] = db[0]
-            all_summary_all.append(all_summary_df)
-        
-        raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_subsetORFs_raw.vcf")
-        if os.path.isfile(raw_vcf_file):
-            # analysis of ORFs aligned to subgroup
-            all_summary_df, stats_list, mut_df= analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
-            # fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
-            # fully_covered.to_csv(fully_covered_file, index=False)
-
-            all_group_summary_file = os.path.join(sub_output, "all_summary_subsetORFs.csv")
-            all_mut_file = os.path.join(sub_output, "all_mutation_subsetORFs.csv")
-            all_summary_df.to_csv(all_group_summary_file, index=False)            # all_found.to_csv(all_found_file, index=False)
-            # fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
-            # all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
-
-            db = all_summary_df["db"].unique()
-            stats_list.append("subsetORFs")
-            genes_found.append(stats_list)
-            mut_df["plate"] = fastq_ID
-            mut_df["db"] = db[0]
-            all_mut_df_subset.append(mut_df)
-            all_summary_df["db"] = db[0]
-            all_summary_subset.append(all_summary_df)
+    # process all summary
+    all_summary_df = pd.concat(all_summary)
+    all_summary_df = all_summary_df.reset_index(drop=True)
 
     # process all log
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log.to_csv(all_log_file, index=False)
 
-    # empty df to save all the variants
-    all_summary_file_plate = os.path.join(output, "all_summary_plateORFs.csv")
-    all_summary_file_all = os.path.join(output, "all_summary_allORFs.csv")
-    all_summary_file_subset = os.path.join(output, "all_summary_subsetORFs.csv")
-
-    all_mut_file_plate = os.path.join(output, "all_mutation_plateORFs.csv")
-    all_mut_file_all = os.path.join(output, "all_mutation_allORFs.csv")
-    all_mut_file_subset = os.path.join(output, "all_mutation_subsetORFs.csv")
-
-    # process all summary and all mutation (plate)
-    all_summary_df = pd.concat(all_summary_plate)
-    all_summary_df.to_csv(all_summary_file_plate, index=False)
     # get all the mutations
-    all_mut_df = pd.concat(all_mut_df_plate)
+    all_mut_df = pd.concat(all_mut_df)
     # save to file
-    #all_mut_file = os.path.join(output, "all_mutations.csv")
-    all_mut_df.to_csv(all_mut_file_plate, index=False)
-
-    # process all summary and all mutation (all)
-    all_summary_df = pd.concat(all_summary_all)
-    all_summary_df.to_csv(all_summary_file_all, index=False)
-    # get all the mutations
-    all_mut_df = pd.concat(all_mut_df_all)
-    # save to file
-    #all_mut_file = os.path.join(output, "all_mutations.csv")
-    all_mut_df.to_csv(all_mut_file_all, index=False)
-
-    # process all summary and all mutation (subset)
-    all_summary_df = pd.concat(all_summary_subset)
-    all_summary_df.to_csv(all_summary_file_subset, index=False)
-    # get all the mutations
-    all_mut_df = pd.concat(all_mut_df_subset)
-    # save to file
-    #all_mut_file = os.path.join(output, "all_mutations.csv")
-    all_mut_df.to_csv(all_mut_file_subset, index=False)
+    all_mut_file = os.path.join(output, "all_mutations.csv")
+    all_mut_df.to_csv(all_mut_file, index=False)
 
     # process summary of number of genes found in each sample
     all_genes_stats = pd.DataFrame(genes_found, columns=["plate", "fully_aligned", "all_genes_found",
@@ -238,6 +180,63 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
     all_genes_stats["% on plate fully aligned"] = all_genes_stats["all_targeted_full"] / all_genes_stats[
         "all_targeted_on_plate"]
     all_genes_stats.to_csv(genes_found_file, index=False)
+
+
+def analysisHuman(raw_vcf_file, fastq_ID, orfs_df, suboutput, ref):
+    """
+
+    :param raw_vcf_file: input vcf file
+    :param fastq_ID: ID for the fastq file
+    :param orfs_df: dataframe contains all input orfs (group specific)
+    :param suboutput: sub output folder
+    :param ref:
+    :return:
+    """
+    analysis = ppsAnalysis.human_variant_analysis.humanAnalysis(raw_vcf_file, fastq_ID, orfs_df, ref)
+    summary = analysis.get_full_cover()
+    # all the genes with full coverage
+    n_fully_aligned = summary[summary["fully_covered"] == "y"].shape[0]
+    # all genes in ref fasta
+    n_ref = summary.shape[0]
+    # all genes found in this fastq file
+    n_all_found = summary[summary["found"] == "y"].shape[0]
+
+    # merge with target orfs
+    merged_df = pd.merge(orfs_df, summary, how="left", left_on="orf_name", right_on="gene_ID")
+    # total number of targeted ORFs in this group
+    n_targeted = orfs_df.shape[0]
+    # total number of targeted ORFs in this group that are fully covered
+    n_targeted_full = merged_df[merged_df["fully_covered"] == "y"].shape[0]
+    # filter vcf file to remove variants that didn't pass filter
+    # return df with columns: ["gene_ID", "pos", "ref", "alt", "qual", "read_counts", "read_depth", "label"]
+    mut_df = analysis.filter_vcf()
+    # merge mut_df with fully covered
+    merge_mut = pd.merge(mut_df, merged_df, how="left", on="gene_ID")
+    merge_mut_fully_covered = merge_mut[merge_mut["fully_covered"] == "y"]
+    mut_file = os.path.join(suboutput, "all_mut.csv")
+    # only process mut if the mut file for this subgroup doesn't exist, to save time
+    # because process_mut gets data from gnomAD
+    if not os.path.isfile(mut_file) or os.stat(mut_file).st_size == 0:
+        processed_mut = analysis._process_mut(mut_df)
+        processed_mut.to_csv(mut_file)
+    else:
+        processed_mut = pd.read_csv(mut_file)
+        processed_mut = processed_mut.drop(processed_mut.columns[0], axis=1)
+
+    # from fully aligned genes, select those with any mutations
+    fully_aligned_with_mut = pd.merge(merged_df[["gene_ID", "entrez_gene_symbol", "found", "fully_covered", "gene_len", "gene_len_mapped", "aligned_perc"]],
+                                      processed_mut,
+                                      how="left",
+                                      left_on="gene_ID",
+                                      right_on="gene_ID")
+    mut_count_df = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]
+    # n_mut_genes_full = fully_aligned_with_mut[~fully_aligned_with_mut["ref"].isnull()]["gene_ID"].unique().shape[0]
+    # count how many ORFs have variants
+    n_orf_with_v = len(merge_mut_fully_covered["gene_ID"].unique())
+
+    # from fully aligned genes, select those with any mutations
+    stats_list = [fastq_ID, n_fully_aligned, n_all_found, n_targeted, n_targeted_full, n_orf_with_v, n_ref]
+    return merged_df, stats_list, mut_count_df
 
 
 def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
@@ -314,32 +313,29 @@ def analysisYeast(raw_vcf_file, fastq_ID, orfs_df):
     return merged_df, stats_list, mut_count_df
 
 
-def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
-    """
-    Join HIP data and other data into one df, remove unwanted columns
-    :param HIP_target_ORFs: csv file contains which HIP ORF is in which sample
-    :param other_target_ORFs: csv file contains which other ORF is in which sample
-    :return: df with ORF name, db name and sample name
-    """
-    HIP_df = pd.read_csv(HIP_target_ORFs)
-    other_target_ORFs = pd.read_csv(other_target_ORFs)
-
-    HIP_df = HIP_df[["ORF_id", "ORF_NAME_NODASH", "len(seq)", "SYMBOL", "plate"]]
-    HIP_df["db"] = "HIP"
-    HIP_df = HIP_df.rename(columns={"ORF_id": "orf_name"})
-    other_ORFs = other_target_ORFs[["orf_name", "ORF_NAME_NODASH", "src_collection", "plate"]]
-    other_ORFs = other_ORFs.rename(columns={"src_collection": "db"})
-    #other_ORFs['plate'] = 'scORFeome-' + other_ORFs['plate'].astype(str)
-    combined = pd.concat([HIP_df, other_ORFs], axis=0, ignore_index=True)
-    return combined
-
-
 def check_args(arguments):
     """
     Check user input arguments
     :param arguments: user input arguments, argparse struct
     :return: None
     """
+
+    if arguments.mode == "human":
+        # if we are running analysis for human
+        # it is required to also specify which reference to align to
+        if arguments.refName == "":
+            raise ValueError("Please also specify --refName grch37, grch38 or cds_seq")
+        # orfs = read_human91(human_91ORFs)
+        # orfs = pd.read_csv(arguments.summaryFile)
+    elif arguments.mode == "yeast":
+        pass
+    else:
+        raise ValueError("Wrong mode")
+
+    if not os.path.isfile(arguments.summaryFile):
+        raise ValueError("Please provide summary file")
+
+    orfs = pd.read_csv(arguments.summaryFile)
 
     if not os.path.isdir(arguments.output):
         raise NotADirectoryError(f"{arguments.output} does not exist")
@@ -352,11 +348,6 @@ def check_args(arguments):
         if not arguments.fastq or not arguments.ref:
             raise ValueError("Please also provide reference dir and fastq dir")
 
-
-    HIP_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/HIP_targeted_ORFs.csv"
-    other_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/other_targeted_ORFs.csv"
-    orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
-
     return orfs
 
 
@@ -365,10 +356,14 @@ if __name__ == "__main__":
     parser.add_argument('--align', action="store_true", help='provide this argument if users want to start with '
                                                          'alignment, otherwise the program assumes alignment was '
                                                          'done and will analyze the vcf files.')
-    parser.add_argument("-f", "--fastq", help="input fastq files", default="/home/rothlab/rli/01_ngsdata/yeast_PPS_seqs/merged_r1r2/")
-    parser.add_argument("-r", "--ref", help="Path to referece files", default="/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/yeast_ref_all/")
-    parser.add_argument('-o', "--output", help='Output directory', default="/home/rothlab/rli/02_dev/06_pps_pipeline/output/")
-    parser.add_argument('-n', "--name", help='Name for this run', default="yeast_alignedwithmoreinfo")
+    parser.add_argument("-f", "--fastq", help="input fastq files", default="/home/rothlab/rli/01_ngsdata/PPS_data/orfPool/merged_pool9-1/", required=True)
+    parser.add_argument("-n", "--name", help="Run name", default="human_test0")
+    parser.add_argument("-m", "--mode", help="Yeast or Human", required=True)
+    parser.add_argument('-o', "--output", help='Output directory', default="/home/rothlab/rli/02_dev/06_pps_pipeline/output/", required=True)
+    parser.add_argument('-r', "--ref", help='Path to reference', default="/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91/", required=True)
+    parser.add_argument("--refName", help="grch37, grch38, cds_seq")
+    parser.add_argument("--summaryFile", help = "Summary file contains ORF information")
+    parser.add_argument("--orfseq", help="File contains ORF sequences")
     args = parser.parse_args()
 
     variants_main(args)
