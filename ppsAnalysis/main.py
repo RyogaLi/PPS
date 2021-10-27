@@ -21,7 +21,7 @@ def variants_main(arguments):
     :return: None
     """
     # set log level
-    loglevel = "DEBUG"
+    loglevel = arguments.log
     orfs = check_args(arguments)
     # create output folder with user input name
     run_name = arguments.name
@@ -338,7 +338,7 @@ def check_args(arguments):
     elif arguments.mode == "yeast":
         pass
     else:
-        raise ValueError("Wrong mode")
+        raise ValueError("Wrong mode, please select human or yeast (case sensitive)")
 
     if not os.path.isfile(arguments.summaryFile):
         raise ValueError("Please provide summary file")
