@@ -19,6 +19,9 @@ import ppsAnalysis.logthis
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn2, venn2_circles, venn2_unweighted
 
+"""
+DEPRECIATED
+"""
 
 def variants_main(arguments):
     """
@@ -90,10 +93,10 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
     all_log = {"fastq_ID": [], "reads": [], "map_perc": []}
     genes_found = []
     # empty df to save all the variants
-    all_summary_file = os.path.join(output, "all_summary.csv")
+    # all_summary_file = os.path.join(output, "all_summary.csv")
 
-    all_summary = []
-    all_mut_df = []
+    all_summary_plate, all_summary_all, all_summary_subset = [], [], []
+    all_mut_df_plate, all_mut_df_all, all_mut_df_subset = [], [], []
     for f in file_list:
         if not f.endswith(".fastq.gz"): continue
         fastq_ID = f.split("_")[0]
@@ -102,20 +105,22 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
         # get the latest log file from dir
         log_file = glob.glob(f"{sub_output}/*.log")[-1]
         if not os.path.isfile(log_file):
-            logger.warning(f"log file does not exist: {log_file}")
+            logger.warning(f"log file does not exist: {fastq_ID}")
             continue
 
         # get information from the log file to make a summary log file for all the samples
         with open(log_file, "r") as log_f:
+            n_sample = 0
             for line in log_f:
                 if "reads;" in line:
+                    n_sample +=1
                     n_reads = line.split(" ")[0]
                     all_log["reads"].append(n_reads)
                 if "alignment rate" in line:
                     perc_aligned = line.split("%")[0]
                     all_log["map_perc"].append(perc_aligned)
 
-        all_log["fastq_ID"] += [fastq_ID] * 3
+        all_log["fastq_ID"] += [fastq_ID] * n_sample
         # for each vcf file, get how many genes are fully aligned
         orfs_df = orfs[orfs["plate"] == fastq_ID]
         raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_plateORFs_raw.vcf")
@@ -124,7 +129,6 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
             all_summary_df, stats_list, mut_df= analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
             # fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
             # fully_covered.to_csv(fully_covered_file, index=False)
-
             all_group_summary_file = os.path.join(sub_output, "all_summary_plateORFs.csv")
             all_summary_df.to_csv(all_group_summary_file, index=False)            # all_found.to_csv(all_found_file, index=False)
             # fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
@@ -135,23 +139,96 @@ def parse_vcf_files_yeast(output, file_list, orfs, logger):
             genes_found.append(stats_list)
             mut_df["plate"] = fastq_ID
             mut_df["db"] = db[0]
-            all_mut_df.append(mut_df)
+            all_mut_df_plate.append(mut_df)
             all_summary_df["db"] = db[0]
-            all_summary.append(all_summary_df)
+            all_summary_plate.append(all_summary_df)
 
-    # process all summary
-    all_summary_df = pd.concat(all_summary)
-    all_summary_df.to_csv(all_summary_file, index=False)
+        raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_allORFs_raw.vcf")
+        if os.path.isfile(raw_vcf_file):
+            # analysis of ORFs aligned to subgroup
+            all_summary_df, stats_list, mut_df= analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+            # fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
+            # fully_covered.to_csv(fully_covered_file, index=False)
+
+            all_group_summary_file = os.path.join(sub_output, "all_summary_allORFs.csv")
+            all_mut_file = os.path.join(sub_output, "all_mutation_allORFs.csv")
+
+            all_summary_df.to_csv(all_group_summary_file, index=False)            # all_found.to_csv(all_found_file, index=False)
+            # fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
+            # all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
+
+            db = all_summary_df["db"].unique()
+            stats_list.append("allORFs")
+            genes_found.append(stats_list)
+            mut_df["plate"] = fastq_ID
+            mut_df["db"] = db[0]
+            all_mut_df_all.append(mut_df)
+            all_summary_df["db"] = db[0]
+            all_summary_all.append(all_summary_df)
+        
+        raw_vcf_file = os.path.join(sub_output, f"{fastq_ID}_L001_subsetORFs_raw.vcf")
+        if os.path.isfile(raw_vcf_file):
+            # analysis of ORFs aligned to subgroup
+            all_summary_df, stats_list, mut_df= analysisYeast(raw_vcf_file, fastq_ID, orfs_df)
+            # fully_covered_file = os.path.join(sub_output, "fully_covered_plateORFs.csv")
+            # fully_covered.to_csv(fully_covered_file, index=False)
+
+            all_group_summary_file = os.path.join(sub_output, "all_summary_subsetORFs.csv")
+            all_mut_file = os.path.join(sub_output, "all_mutation_subsetORFs.csv")
+            all_summary_df.to_csv(all_group_summary_file, index=False)            # all_found.to_csv(all_found_file, index=False)
+            # fully_covered.to_csv(all_summary, index=False, header=False, mode="a")
+            # all_found.to_csv(all_found_summary, index=False, header=False, mode="a")
+
+            db = all_summary_df["db"].unique()
+            stats_list.append("subsetORFs")
+            genes_found.append(stats_list)
+            mut_df["plate"] = fastq_ID
+            mut_df["db"] = db[0]
+            all_mut_df_subset.append(mut_df)
+            all_summary_df["db"] = db[0]
+            all_summary_subset.append(all_summary_df)
+
     # process all log
     all_log = pd.DataFrame(all_log)
     all_log_file = os.path.join(output, "alignment_log.csv")
     all_log.to_csv(all_log_file, index=False)
 
+    # empty df to save all the variants
+    all_summary_file_plate = os.path.join(output, "all_summary_plateORFs.csv")
+    all_summary_file_all = os.path.join(output, "all_summary_allORFs.csv")
+    all_summary_file_subset = os.path.join(output, "all_summary_subsetORFs.csv")
+
+    all_mut_file_plate = os.path.join(output, "all_mutation_plateORFs.csv")
+    all_mut_file_all = os.path.join(output, "all_mutation_allORFs.csv")
+    all_mut_file_subset = os.path.join(output, "all_mutation_subsetORFs.csv")
+
+    # process all summary and all mutation (plate)
+    all_summary_df = pd.concat(all_summary_plate)
+    all_summary_df.to_csv(all_summary_file_plate, index=False)
     # get all the mutations
-    all_mut_df = pd.concat(all_mut_df)
+    all_mut_df = pd.concat(all_mut_df_plate)
     # save to file
-    all_mut_file = os.path.join(output, "all_mutations.csv")
-    all_mut_df.to_csv(all_mut_file, index=False)
+    #all_mut_file = os.path.join(output, "all_mutations.csv")
+    all_mut_df.to_csv(all_mut_file_plate, index=False)
+
+    # process all summary and all mutation (all)
+    all_summary_df = pd.concat(all_summary_all)
+    all_summary_df.to_csv(all_summary_file_all, index=False)
+    # get all the mutations
+    all_mut_df = pd.concat(all_mut_df_all)
+    # save to file
+    #all_mut_file = os.path.join(output, "all_mutations.csv")
+    all_mut_df.to_csv(all_mut_file_all, index=False)
+
+    # process all summary and all mutation (subset)
+    all_summary_df = pd.concat(all_summary_subset)
+    all_summary_df.to_csv(all_summary_file_subset, index=False)
+    # get all the mutations
+    all_mut_df = pd.concat(all_mut_df_subset)
+    # save to file
+    #all_mut_file = os.path.join(output, "all_mutations.csv")
+    all_mut_df.to_csv(all_mut_file_subset, index=False)
+
     # process summary of number of genes found in each sample
     all_genes_stats = pd.DataFrame(genes_found, columns=["plate", "fully_aligned", "all_genes_found",
                                                          "all_targeted_on_plate", "all_targeted_full",
