@@ -1,0 +1,25 @@
+#!python
+
+# Author: Roujia Li
+# email: Roujia.li@mail.utoronto.ca
+
+import argparse
+from ppsAnalysis.main import variants_main
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Plasmid pool sequencing analysis')
+    parser.add_argument('--align', action="store_true", help='provide this argument if users want to start with '
+                                                         'alignment, otherwise the program assumes alignment was '
+                                                         'done and will analyze the vcf files.')
+    parser.add_argument("-f", "--fastq", help="path to fastq files", required=True)
+    parser.add_argument("-n", "--name", help="Run name", default="pps")
+    parser.add_argument("-m", "--mode", help="Yeast or Human", required=True)
+    parser.add_argument('-o', "--output", help='Output directory', required=True)
+    parser.add_argument('-r', "--ref", help='Path to reference', required=True)
+    parser.add_argument("--refName", help="grch37, grch38, human91")
+    parser.add_argument("--summaryFile", help="Summary file contains ORF information", required=True)
+    #parser.add_argument("--orfseq", help="File contains ORF sequences")
+    parser.add_argument("--log", help="logging mode, default set to info", default="info")
+    args = parser.parse_args()
+
+    variants_main(args)

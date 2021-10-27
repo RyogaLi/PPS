@@ -20,7 +20,6 @@ class Alignment(object):
         :param log: log object
         :param setting: alignment setting
         """
-
         self._sample = fastq
         # self._reference = reference
         self._setting = setting
@@ -38,8 +37,6 @@ class Alignment(object):
         :return:
         """
         sam_file = os.path.join(self._output, os.path.basename(self._sample).replace(".fastq.gz", f"{suffix}.sam"))
-        # r2_sam_file = os.path.join(output_path, os.path.basename(r2).replace(".fastq.gz", ".sam"))
-
 
         if self._setting == "DEFAULT": # default bowtie2 settings for alignment, more info in README
             r1_cmd = f"bowtie2 -a -p 4 --local -x {reference} -U {self._sample} -S {sam_file}"
@@ -86,8 +83,7 @@ class Alignment(object):
     def main(self, at):
         """
         Write sh file and submit sh file for alignment
-        :param r1:
-        :param r2:
+        :param at: alignment time when submiting jobs to the cluster
         :return:
         """
         log_f = os.path.join(self._output, os.path.basename(self._sh_file).replace(".sh", ""))
@@ -101,9 +97,11 @@ class Alignment(object):
         if self._mode == "yeast":
             # get reference for yeast
             # for each plate, align to all_orfs, plate_orfs, subset_orfs
+            # files labeld with HIP means they are in the HIP group
+            # files labeled with Sup01-Sup03 means they are in the supp-PROTGEN group
+            # files labeled with Sup04+ means they are in the supp-SGD group
             # all orfs
             all_orfs = os.path.join(self._ref_dir, "all_seq")
-            #all_orfs_backbone = os.path.join(self._ref_dir, "all_seq_backbone")
             plate_orfs = os.path.join(self._ref_dir, self._basename)
             regexp = re.compile(r"Sup0[1-3]")
             if "HIP" in self._basename:
@@ -113,24 +111,24 @@ class Alignment(object):
             else:
                 sub_set_orfs = os.path.join(self._ref_dir, "SGD_all")
 
-            # align this sample to all ORFs
+            # in the final version, we only align orfs to the targeted plate ORFs
             # self._align(all_orfs_backbone, "_allwithbackbone")
-            self._align(all_orfs, "_allORFs")
+            # self._align(all_orfs, "_allORFs")
+            # self._align(sub_set_orfs, "_subsetORFs")
             self._align(plate_orfs, "_plateORFs")
-            self._align(sub_set_orfs, "_subsetORFs")
-        else:
-            #all_orfs = os.path.join(self._ref_dir, "all_ref_human")
+
+        else:  # human samples
             # get group name for this sample
             match = re.search(".+(G[0-9]+)", self._basename)
             if match:
                 group_name = match.group(1)
             else:
-                print(self._basename)
+                self._log.info(self._basename)
                 raise ValueError("no group ID specified")
+
             group_spec_orfs = os.path.join(self._ref_dir, f"group_ref_{group_name}")
             #self._align(all_orfs, "_all_orfs")
             self._align(group_spec_orfs, "_group_spec_orfs")
-
 
         os.system(f"chmod 755 {self._sh_file}")
         # submit this to the cluster
@@ -140,5 +138,6 @@ class Alignment(object):
         job_id = job.stdout.decode("utf-8").strip()
         # log sample name and job id
         self._log.info(f"Sample {self._basename}: job id - {job_id}")
+
         return job_id.split()[-1]
 

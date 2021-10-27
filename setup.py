@@ -20,15 +20,15 @@ with open("README.md", "r") as fh:
 
 
 setup(
-    name="PPS analysis",
-    version="0.0.1", # CHANGE RELEASE NOTE IN MAIN
+    name="PlasmidPoolAnalysis",
+    version="0.1.0", # CHANGE RELEASE NOTE IN MAIN
     author="ROUJIA LI",
     author_email="roujia.li@mail.utoronto.ca",
     description="Analysis for plasmid pool sequencing data",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/RyogaLi/PPS",
-	# scripts=['bin/tileseq_mut', 'bin/mergeRuns', 'bin/posterior_QC', 'bin/random_ds'],
+	scripts=['bin/pps'],
 	# For a list of valid classifiers, see https://pypi.org/classifiers/
 	classifiers=[  # Optional
 		# How mature is this project? Common values are
@@ -50,7 +50,7 @@ setup(
 		'Programming Language :: Python :: 3.7',
 	],
 	packages=find_packages(),  # Optional
-	install_requires=['pandas', 'seaborn', 'numpy', 'biopython', 'fpdf', 'progressbar'],
+	install_requires=['pandas', 'seaborn', 'numpy', 'biopython', 'progressbar'],
     python_requires='>=3.7',
 
 	# # To provide executable scripts, use entry points in preference to the

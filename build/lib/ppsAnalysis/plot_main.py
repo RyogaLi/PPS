@@ -16,12 +16,19 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 class PlotObjYeast(object):
 
-    def __init__(self, inputdir):
+    def __init__(self, inputdir, summary_file, mutation_file):
         """
         Initialize plot object
         :param inputdir: input directory contains all the output files from the server
         """
         self._dir = inputdir
+         # file contains all fully covered genes
+        # self._all_summary = pd.read_csv(os.path.join(self._dir, "all_summary.csv"))
+        # # file contains all found genes
+        # self._all_mut = pd.read_csv(os.path.join(self._dir, "all_mutations.csv"))
+        #
+        self._all_summary = summary_file
+        self._all_mut = mutation_file
 
     def make_venn(self, orfs):
         """
@@ -297,8 +304,8 @@ class PlotObjYeast(object):
         plt.close()
 
     def plot_n_variants(self):
-        all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
-        all_mut = pd.read_csv(all_mut_summary)
+        # all_mut_summary = os.path.join(self._dir, "all_mutations.csv")
+        all_mut = pd.read_csv(self._all_mut)
         all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
         all_mut["gene_name"] = all_mut["gene_ID"].str.extract(r"(.*)-[A-Z]+-[1-9]")
         v_counts = all_mut[["gene_name", "db"]].value_counts().to_frame().reset_index()
@@ -323,6 +330,44 @@ class PlotObjYeast(object):
         plt.savefig(os.path.join(self._dir, "./n_gene_with_variants.png"))
         plt.close()
 
+    def make_perc_coverred_dist(self):
+        """
+        from all summary, plot perc covered by sequencing data on bar plot
+        For All, HIP, Supp-SGD and Supp-PROT
+        :return:
+        """
+        print(self._all_summary.columns)
+        print(self._all_mut.columns)
+        not_fully_covered = self._all_summary.loc[(self._all_summary["aligned_perc"] != 1) & (self._all_summary["found"] == "y")]
+        HIP = not_fully_covered[not_fully_covered["db"] == "HIP"]
+        SGD = not_fully_covered[not_fully_covered["db"] == "SGD"]
+        PROT = not_fully_covered[not_fully_covered["db"] == "PROTGEN"]
+        print(self._all_summary.db.value_counts())
+
+        fig, ax = plt.subplots(figsize=(10, 12))
+        sns.displot(HIP.aligned_perc*100, bins=40, ax=ax, color="#084c61", edgecolor="#084c61")
+        plt.title("HIP ORFs")
+        plt.xlabel("Percent of ORF len aligned")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "nfully_HIP_perc_dist.png"))
+        plt.close()
+
+        fig, ax = plt.subplots(figsize=(10, 12))
+        sns.displot(SGD.aligned_perc*100, bins=40, ax=ax, color="#084c61", edgecolor="#084c61")
+        plt.title("Supp-SGD ORFs")
+        plt.xlabel("Percent of ORF len aligned")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "nfully_SGD_perc_dist.png"))
+
+        fig, ax = plt.subplots(figsize=(10, 12))
+        sns.displot(PROT.aligned_perc*100, bins=40, ax=ax, color="#084c61", edgecolor="#084c61")
+        plt.title("Supp-PROT ORFs")
+        plt.xlabel("Percent of ORF len aligned")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "nfully_PROT_perc_dist.png"))
+
+        plt.close()
+
 
 class PlotObjHuman(object):
 
@@ -332,6 +377,10 @@ class PlotObjHuman(object):
         :param inputdir: input directory contains all the output files from the server
         """
         self._dir = inputdir
+         # file contains all fully covered genes
+        self._all_summary = pd.read_csv(os.path.join(self._dir, "all_summary.csv"))
+        # file contains all found genes
+        self._all_mut = pd.read_csv(os.path.join(self._dir, "all_mutations.csv"))
 
     def make_fully_covered_withmut_bar_plot(self):
         """
@@ -373,18 +422,20 @@ class PlotObjHuman(object):
         """
         human_91 = "/Users/roujia/Documents/02_dev/04_HuRI/human ORF/20161117_ORFeome91_seqs.csv"
         human_ORFs = read_human_csv(human_91)
-        all_full_summary = os.path.join(self._dir, "all_full_summary.csv")
-        all_found_summary = os.path.join(self._dir, "all_found_summary.csv")
+        all_summary_file = os.path.join(self._dir, "all_summary.csv")
+        all_summary = pd.read_csv(all_summary_file)
+        # all_found_summary = os.path.join(self._dir, "all_found_summary.csv")
         # compare genes in all the targeted space (ORFs) vs all fully aligned
         all_targeted_unique_db = human_ORFs[human_ORFs["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
-        all_fully_aligned = pd.read_csv(all_full_summary)
-        all_found = pd.read_csv(all_found_summary)
-        all_found_genes = all_found[all_found["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
-        all_fully_aligned_genes = all_fully_aligned[all_fully_aligned["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
+
+        all_found_genes = all_summary[(all_summary["found"] == 'y') & (all_summary["entrez_gene_symbol"] != '-1')]["entrez_gene_symbol"].dropna().unique()
+        all_fully_aligned_genes = all_summary[(all_summary["fully_covered"] == 'y') & (all_summary["entrez_gene_symbol"] != '-1')]["entrez_gene_symbol"].dropna(
+
+        ).unique()
         # print(all_fully_aligned)
-        print(len(all_found_genes))
-        print(len(all_fully_aligned_genes))
-        print(len(all_targeted_unique_db))
+        # print(len(all_found_genes))
+        # print(len(all_fully_aligned_genes))
+        # print(len(all_targeted_unique_db))
         # print(set(all_found_genes) ^ set(all_targeted_unique_db))
         print(len(set.intersection(set(all_found_genes), set(all_targeted_unique_db))))
         plt.figure(figsize=(8, 5))
@@ -441,13 +492,13 @@ class PlotObjHuman(object):
         # plt.close()
 
         all_mut = pd.read_csv(all_mut_summary)
-        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA")]
+        all_mut = all_mut[(all_mut["type"] != "syn") & (all_mut["type"] != "NA") & (all_mut["fully_covered"] == "y")]
         # also filter out gnomad common variants
         # all_mut.exome = all_mut.exome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut.genome = all_mut.genome.fillna("{'af': 0.000000001}").astype(str)
         # all_mut["exome_af"] = pd.DataFrame(all_mut.exome.values.tolist())
-        # all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
-        all_mut["exome_af"] = all_mut["exome"]
+        all_mut["exome_af"] = all_mut["exome"].str.extract(r'(\d+.\d+e?-?\d+)')
+        # all_mut["exome_af"] = all_mut["exome"]
         all_mut["genome_af"] =  all_mut["genome"].str.extract(r'(\d+.\d+e?-?\d+)')
         # print(all_mut[all_mut["exome"].notnull()][["exome", "exome_af"]])
         # print(all_mut[all_mut["af"].notnull()]["af"])
@@ -457,7 +508,7 @@ class PlotObjHuman(object):
         all_mut["filled_af"] = all_mut["filled_af"].fillna(0.0000001)
         # print(all_mut[all_mut["filled_af"].notnull()])
         # filter common variants
-        all_mut = all_mut[all_mut["filled_af"] < 0.0001]
+        all_mut = all_mut[all_mut["filled_af"] < 0.001]
 
         all_mut_genes = all_mut[all_mut["entrez_gene_symbol"] != '-1']["entrez_gene_symbol"].dropna().unique()
         plt.figure(figsize=(10, 5))
@@ -471,6 +522,39 @@ class PlotObjHuman(object):
         plt.tight_layout()
         plt.savefig(os.path.join(self._dir, "./allORFs_venn3_onlygnomad.png"))
         plt.close()
+
+        # genes with non_syn_ref
+        all_mut_nonsyn_ref = all_mut[(all_mut["type"] == "non_syn_ref") & (all_mut["entrez_gene_symbol"] != '-1')][
+            "entrez_gene_symbol"].dropna().unique()
+        vd = venn3([set(all_targeted_unique_db), set(all_mut_nonsyn_ref), set(all_mut_genes)],
+                   set_labels=(
+                   f"all ORFs: {len(all_targeted_unique_db)}", f"{len(all_mut_nonsyn_ref)}",
+                   f"fully covered; \nwith non-syn mut; \nremoved gnomAD common variants:\n"
+                   f" {len(all_mut_genes)}"))
+        venn3_circles([set(all_targeted_unique_db), set(all_mut_nonsyn_ref), set(all_mut_genes)],
+                      linestyle='dashed',
+                      linewidth=1, color="black")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "./allORFs_venn3_variants.png"))
+        plt.close()
+
+    def make_perc_coverred_dist(self):
+        """
+        from all summary, plot perc covered by sequencing data on bar plot
+        For All, HIP, Supp-SGD and Supp-PROT
+        :return:
+        """
+        print(self._all_summary.columns)
+        print(self._all_mut.columns)
+        not_fully_covered = self._all_summary.loc[(self._all_summary["aligned_perc"] < 1) & (self._all_summary["found"] == "y")]
+        print(self._all_summary["aligned_perc"])
+        print(not_fully_covered.shape)
+        fig, ax = plt.subplots(figsize=(10, 12))
+        sns.displot(not_fully_covered.aligned_perc*100, bins=40, ax=ax, color="#084c61", edgecolor="#084c61")
+        plt.title("Human 9.1 ORFs")
+        plt.xlabel("Percent of ORF len aligned")
+        plt.tight_layout()
+        plt.savefig(os.path.join(self._dir, "nfully_human91_perc_dist.png"))
 
 
 def read_human_csv(human91_ORFs):
@@ -504,29 +588,32 @@ def read_yeast_csv(HIP_target_ORFs, other_target_ORFs):
     return combined
 
 
-def plot_main(inputdir):
+def plot_main(inputdir, summary, mut):
     if args.m == "yeast":
 
-        plot_obj = PlotObjYeast(inputdir)
-        HIP_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/HIP_targeted_ORFs.csv"
-        other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
-        orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
-        plot_obj.make_fully_covered_withmut_bar_plot()
+        plot_obj = PlotObjYeast(inputdir, summary, mut)
+        # HIP_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/HIP_targeted_ORFs.csv"
+        # other_target_ORFs = "/Users/roujia/Documents/02_dev/02_pooled_plasmid/yeast_reference/other_targeted_ORFs.csv"
+        # orfs = read_yeast_csv(HIP_target_ORFs, other_target_ORFs)
+        # plot_obj.make_fully_covered_withmut_bar_plot()
         # # # plot_obj.make_venn_variants(orfs)
-        plot_obj.make_venn(orfs)
-        plot_obj.plot_n_variants()
+        # plot_obj.make_venn(orfs)
+        # plot_obj.plot_n_variants()
+        plot_obj.make_perc_coverred_dist()
     else:
         plot_obj = PlotObjHuman(inputdir)
-        plot_obj.make_fully_covered_withmut_bar_plot()
-        plot_obj.make_venn()
-
+        # plot_obj.make_fully_covered_withmut_bar_plot()
+        # plot_obj.make_venn()
+        plot_obj.make_perc_coverred_dist()
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Plasmid pool sequencing analysis (plots)')
     parser.add_argument('-i', help='input dir')
+    parser.add_argument('-s', help='summary')
+    parser.add_argument('-mut', help='mut_summary')
     parser.add_argument('-m', help='mode')
 
     args = parser.parse_args()
 
-    plot_main(args.i)
+    plot_main(args.i, args.s, args.mut)
