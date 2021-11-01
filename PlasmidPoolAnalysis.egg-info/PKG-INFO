@@ -1,0 +1,94 @@
+Metadata-Version: 2.1
+Name: PlasmidPoolAnalysis
+Version: 0.1.0
+Summary: Analysis for plasmid pool sequencing data
+Home-page: https://github.com/RyogaLi/PPS
+Author: ROUJIA LI
+Author-email: roujia.li@mail.utoronto.ca
+License: UNKNOWN
+Description: ## Dependencies
+        * [python version 3.7](https://www.python.org/downloads/)
+        
+        * [Bowtie2 version 2.3.2](https://sourceforge.net/projects/bowtie-bio/files/bowtie2/)
+        
+        * [samtools version 1.4](https://sourceforge.net/projects/samtools/files/)
+        
+        ## Build reference
+        * The pre-built reference files used for the analysis can be found in
+            1. human grch37: `/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_ensembl/grch37`
+            2. human grch38: `/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_ensembl/grch38`
+            3. human 9.1: `/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/human_91`
+            4. yeast (palte specific): `/home/rothlab/rli/02_dev/06_pps_pipeline/fasta/yeast_ref_all`
+        * If you need to build new references, please make sure:
+            1. Name for the reference is the same as name for the sequencing files. For example, the corresponding reference for `scORFeome-HIP-05_L001.fastq.gz` is `scORFeome-HIP-05`
+            2. ID for each sequence matches the ORF-id in the summary file 
+            
+        ## Make summary file
+        * The summary files for human and yeast are premade before running the pipeline, the raw data can be found: `/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/human_summary.csv` and `/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/yeast_summary.csv`
+        * If you are making your own summary file, make sure you have a column with the name `orf_name`, which is the unique identifier for each ORF, this should also map with the sequence names in the fasta file you make. You can modify in `main.py: analysisHuman or analysisYeast` to select columns you want to keep
+        
+        ## Input FASTQ files
+        * FASTQ files:
+          1. human (files from the same group are merged together): `/home/rothlab/rli/01_ngsdata/PPS_data/Human_pool/merged_pool9-1/`
+          2. yeast (files from the same plate are merged together): `/home/rothlab/rli/01_ngsdata/PPS_data/yeast_pps_fastq/yeast_pps_fastq/`
+        
+        ## Install and Run
+        * install the package using: `pip install PlasmidPoolAnalysis`
+            ```
+          usage: pps [-h] [--align] [-f FASTQ] [-n NAME] -o OUTPUT -r REF
+                   [--refName REFNAME] [--summaryFile SUMMARYFILE] [--orfseq ORFSEQ]
+          Plasmid pool sequencing analysis
+        
+          required arguments:
+          -f FASTQ, --fastq FASTQ
+                                path to fastq files
+          -o OUTPUT, --output OUTPUT
+                                Output directory
+          -r REF, --ref REF     Path to reference
+          -m MODE, --mode MODE  human or yeast
+          --summaryFile SUMMARYFILE
+                                Yeast or Human summary file
+          
+          optional arguments:
+          -h, --help            show this help message and exit
+          --align               provide this argument if users want to start with
+                                alignment, otherwise the program assumes alignment was
+                                done and will analyze the vcf files.
+          -n NAME, --name NAME  Run name (default set to pps)
+        
+          --refName REFNAME     grch37, grch38, cds_seq. Required if mode == human
+          -l LOG, --log LOG logging mode, default set to info
+          ```
+        * Example: Human (with alignment to grch37)
+          
+          `pps -f ~/01_ngsdata/PPS_data/Human_pool/merged_pool9-1/ -o ../../output/ -n Human91 --refName human91 --summaryFile ../../target_orfs/human_summary.csv -m human -r ../../fasta/human_91/ --align`
+        
+        * Yeast 
+          
+          `pps -f ~/01_ngsdata/PPS_data/yeast_pps_fastq/yeast_pps_fastq/ -o ../../output/ -n testpackYeast --summaryFile ../../target_orfs/yeast_summary.csv -m yeast -r ../../fasta/yeast_ref_all/`
+        
+        * The pipeline first submit alignment jobs to the cluster (slurm), after all the jobs are done, it filters vcf files, output summary and mutations
+        
+        ## Output
+        * All the intermediate files will be saved into your output directory, a new folder will be made with the `-n` parameter 
+        * For each fastq file, a folder will be made. It contains the following files:
+          1. `*.sh`: alignment job script used for alignment
+          2. `all_summary_plateORFs.csv`: summary for this plate/group
+          3. `*.log`: log file
+          4. `*_raw.vcf`: raw vcf file generated from pileup
+          5. `*_variants.vcf`: vcf file with variants only
+          6. `*_filtered.vcf`: filtered vcf file 
+        * After the run is finished, the following files will be generated in the master output folder:
+          1. `alignment_log.csv`: shows the alignment rate for each plate/group
+          2. `all_mutations.csv`: contains all the variants passed filter 
+          3. `all_summary.csv`: contains all ORFs and if they were found/fully covered in the sequencing
+          4. `genes_stats.csv`: overall stats
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.7
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown

@@ -1,4 +1,4 @@
-#!/usr/bin/env python#VERSION#
+#!/usr/bin/env python3.7
 
 # Author: Roujia Li
 # email: Roujia.li@mail.utoronto.ca
@@ -11,7 +11,7 @@ class logit(object):
     def __init__(self, format=logging.Formatter("%(asctime)s — %(name)s — %(levelname)s — %(message)s"), log_f="", log_level=""):
         self._format = format
         self._logfile = log_f
-        self._log_level = log_level
+        self._log_level = log_level.upper()
 
     def get_console_handler(self):
         console_handler = logging.StreamHandler(sys.stdout)

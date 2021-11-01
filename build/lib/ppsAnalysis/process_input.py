@@ -7,7 +7,7 @@ import pandas as pd
 # the final input file can be found here:
 
 
-def read_yeast_orf(HIP_target_ORFs, other_target_ORFs):
+def read_yeast_orf(HIP_target_ORFs, other_target_ORFs, all_sequence):
     """
     Join HIP data and other data into one df, remove unwanted columns. Save the merged df to file
     :param HIP_target_ORFs: csv file contains which HIP ORF is in which sample
@@ -16,7 +16,7 @@ def read_yeast_orf(HIP_target_ORFs, other_target_ORFs):
     """
     HIP_df = pd.read_csv(HIP_target_ORFs)
     other_target_ORFs = pd.read_csv(other_target_ORFs)
-
+    all_sequence = pd.read_csv(all_sequence)
     HIP_df = HIP_df[["ORF_id", "ORF_NAME_NODASH", "len(seq)", "SYMBOL", "plate"]]
     HIP_df["db"] = "HIP"
     HIP_df = HIP_df.rename(columns={"ORF_id": "orf_name"})
@@ -24,7 +24,8 @@ def read_yeast_orf(HIP_target_ORFs, other_target_ORFs):
     other_ORFs = other_ORFs.rename(columns={"src_collection": "db"})
     #other_ORFs['plate'] = 'scORFeome-' + other_ORFs['plate'].astype(str)
     combined = pd.concat([HIP_df, other_ORFs], axis=0, ignore_index=True)
-    
+    # merge sequence 
+    combined = pd.merge(combined, all_sequence, on="orf_name", how="left")
     output_file = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/yeast_summary.csv"
     combined.to_csv(output_file)
     return combined
@@ -61,7 +62,8 @@ if __name__ == '__main__':
     # process yeast file
     HIP_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/HIP_targeted_ORFs.csv"
     other_target_ORFs = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/other_targeted_ORFs.csv"
-    read_yeast_orf(HIP_target_ORFs, other_target_ORFs)
+    all_seq = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/all_sequence.csv"
+    read_yeast_orf(HIP_target_ORFs, other_target_ORFs, all_seq)
 
     # process human file
     ref_91 = "/home/rothlab/rli/02_dev/06_pps_pipeline/target_orfs/20161117_ORFeome91_seqs.csv"

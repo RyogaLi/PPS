@@ -25,7 +25,7 @@ def variants_main(arguments):
     orfs = check_args(arguments)
     # create output folder with user input name
     run_name = arguments.name
-    output = os.path.join(arguments.output, run_name)
+    output = arguments.output
     if not os.path.isdir(output):
         os.mkdir(output)
     # make main log file
@@ -346,7 +346,8 @@ def check_args(arguments):
     orfs = pd.read_csv(arguments.summaryFile)
 
     if not os.path.isdir(arguments.output):
-        raise NotADirectoryError(f"{arguments.output} does not exist")
+        os.mkdir(arguments.output)
+        #raise NotADirectoryError(f"{arguments.output} does not exist")
 
     if arguments.fastq and not os.path.isdir(arguments.fastq):
         raise NotADirectoryError(f"{arguments.fastq} does not exist")
@@ -365,14 +366,13 @@ if __name__ == "__main__":
                                                          'alignment, otherwise the program assumes alignment was '
                                                          'done and will analyze the vcf files.')
     parser.add_argument("-f", "--fastq", help="input fastq files", required=True)
-    parser.add_argument("-n", "--name", help="Run name")
     parser.add_argument("-m", "--mode", help="Yeast or Human", required=True)
     parser.add_argument('-o', "--output", help='Output directory', required=True)
     parser.add_argument('-r', "--ref", help='Path to reference', required=True)
     parser.add_argument("--refName", help="grch37, grch38, human91")
     parser.add_argument("--summaryFile", help="Summary file contains ORF information")
     #parser.add_argument("--orfseq", help="File contains ORF sequences")
-    parser.add_argument("--log", help="set log level", default="info")
+    parser.add_argument("--log", help="set log level", default="INFO")
     args = parser.parse_args()
 
     variants_main(args)
